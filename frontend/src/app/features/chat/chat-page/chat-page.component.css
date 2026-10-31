@@ -1,0 +1,12 @@
+:host { display: block; }
+
+.chat-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  height: calc(100vh - var(--topbar-height) - 4rem);
+  min-height: 460px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}

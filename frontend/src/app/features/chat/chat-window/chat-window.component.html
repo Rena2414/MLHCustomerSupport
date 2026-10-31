@@ -1,0 +1,25 @@
+<header class="chat-header">
+  <div class="avatar">S</div>
+  <div>
+    <div class="title">Support agent</div>
+    <div class="subtitle">online</div>
+  </div>
+</header>
+
+<div class="messages" #scroller>
+  @for (m of store.messages(); track m.id) {
+    <div class="row" [class.mine]="m.author === 'customer'">
+      <div class="bubble">
+        <span>{{ m.text }}</span>
+        <time>{{ m.createdAt | date: 'shortTime' }}</time>
+      </div>
+    </div>
+  }
+  @if (store.waitingForReply()) {
+    <div class="row">
+      <div class="bubble typing">typing...</div>
+    </div>
+  }
+</div>
+
+<app-message-composer (sent)="store.send($event)" />
