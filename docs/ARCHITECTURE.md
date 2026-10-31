@@ -4,352 +4,169 @@ Status: MVP in development
 Last updated: 2026-10-31
 Audience: developers and coding agents working in this repository
 
-This document describes what the system does, how its parts fit together, how requests flow, and how to run and use it. `CLAUDE.md` holds the binding engineering rules; `policy/` holds the binding agent behavior rules. If this document conflicts with either, they win and this document must be updated.
+This document describes what the system does, how its parts fit together, how requests flow, and how to run it. `CLAUDE.md` holds the binding engineering rules; `policy/` holds the binding agent behavior rules. If this document conflicts with either, they win and this document must be updated.
 
 ## 1. Purpose
 
-An AI support operations assistant for Leaply, a wellness and habit-building app. The AI does not only answer: it understands the customer's real goal, executes allowed actions through tools, escalates to humans with a ready-to-use handoff, assists human agents, and reviews conversation quality.
-
-Hackathon mapping:
-
-| Challenge requirement | System capability |
-|---|---|
-| Understand the request and the real goal | Intent analysis, clarity levels C1 to C4, hedged-fact handling (`policy/01_intent_understanding.md`) |
-| Propose or initiate actions | Tool-using agent loop with autonomy tiers and code-enforced gates |
-| Help support agents decide | Copilot mode and structured handoff with recommended action and draft reply |
-| Analyze interactions and evaluate support | QA mode scoring, churn risk, root cause (`policy/09_copilot_and_qa.md`) |
+Classly is an online learning platform with four roles: Admin, Teacher, Student and Parent. Students get an AI support bot that answers questions about the platform, cancels their subscription after explicit confirmation, and records concerns about their teachers. Admins see analytics of those concerns per teacher, with an AI-written summary on demand.
 
 ## 2. Capabilities
 
 | Capability | Actor | Status |
 |---|---|---|
-| Client table and client details in admin UI | Support staff | Implemented (PostgreSQL, seeded in the first migration) |
-| Help guide Q&A: the orchestrator answers questions about the Leaply app in plain language; a sub-agent reads `docs/SYSTEM.md` and returns a summary with examples | Customer | Implemented in `agents/` (`POST /chat`, in-memory history) |
-| Customer support chat with orchestrator and sub-agents | Customer | Planned |
-| Autonomous resolution of 🟢 and 🟡 cases | Agent | Planned |
-| Escalation queue with structured handoffs | Support staff | Planned |
-| Copilot recommendations on tickets | Support staff | Planned |
-| Conversation quality review | Support lead | Planned |
-| Audit log of write actions and security flags | System | Planned |
-| Staff authentication (Admin, SupportAgent) | Support staff | Planned |
+| Registration and login with JWT (teacher, student, parent self-register; admin is seeded) | Everyone | Implemented |
+| Users table and full user details (profile, family links, classes, concerns, audit) | Admin | Implemented |
+| Teacher concern analytics: per-teacher totals, open, by category and severity, 30-day trend, AI summary, mark reviewed | Admin | Implemented |
+| Classes: create, add or remove students by login | Teacher | Implemented |
+| Link children by login, see their classes, subscribe a child | Parent | Implemented |
+| Home with classes, teachers and subscription; subscribe | Student | Implemented |
+| Support bot: help guide answers from `docs/SYSTEM.md` | Student | Implemented |
+| Support bot: cancel own subscription after confirmation in a later turn | Student | Implemented |
+| Support bot: report a concern about one of their teachers, classified by Gemini | Student | Implemented |
+| Audit log of every write | System | Implemented |
+| Human handoff queue | Admin | Planned |
 
 ## 3. Architecture
 
 ```mermaid
 flowchart LR
-    UI[Angular admin UI<br/>:4200] -->|HTTP JSON| API[.NET API<br/>:5162]
-    API -->|POST /chat| AG[Python agent service<br/>:8000]
-    AG -->|tool calls over HTTP| API
+    UI[Angular UI<br/>:4200] -->|HTTP JSON + JWT| API[.NET API<br/>:5162]
+    API -->|POST /chat, /chat/stream,<br/>/analytics/teacher-summary| AG[Python agent service<br/>:8000]
+    AG -->|/api/internal/* with X-Agent-Key| API
     AG -->|generate| LLM[Gemini API]
-    API --> DB[(PostgreSQL<br/>customers, conversations, messages)]
+    API --> DB[(PostgreSQL)]
 ```
 
 | Component | Path | Tech | Responsibility | Must not |
 |---|---|---|---|---|
-| Frontend | `frontend/` | Angular 20, standalone components | Admin UI: clients, chat, handoff queue | Call the agent service or the database directly |
-| Backend API | `backend/` | .NET 8, Clean Architecture | Business data, business rules, authoritative enforcement (gates, limits, audit), chat entry point | Contain LLM prompts or agent reasoning |
-| Agent service | `agents/` | Python, FastAPI, `google-genai` | Agent loop, orchestrator and sub-agents, policy loading, tool adapters | Access the database; bypass the API |
+| Frontend | `frontend/` | Angular 20, standalone components, signals | Login, registration, role dashboards, student chat, admin analytics | Call the agent service or the database |
+| Backend API | `backend/` | .NET 8, Clean Architecture, EF Core, JWT | Users, families, classes, subscriptions, concerns, analytics, audit, chat entry point, enforcement | Contain LLM prompts or agent reasoning |
+| Agent service | `agents/` | Python, FastAPI, `google-genai` | Agent loop, orchestrator, help guide reader, concern classifier, teacher summary | Access the database or bypass the API |
 | Policy | `policy/` | Markdown | Agent behavior rules with stable IDs | Contain code or secrets |
 
-Backend layers and allowed references:
+Backend layers: `Api -> Infrastructure -> Application -> Domain`, and `Api -> Application`. Domain and Application never reference EF Core, Identity or ASP.NET; password hashing (`IPasswordHasher`) and tokens (`ITokenService`) are Application abstractions implemented in Infrastructure.
 
-```
-Api -> Infrastructure -> Application -> Domain
-Api -> Application
-```
+## 4. Roles and Authentication
 
-| Layer | Contains | Never references |
-|---|---|---|
-| `MlhSupport.Domain` | Entities, enums, domain rules | Anything else |
-| `MlhSupport.Application` | Use cases, DTOs, repository abstractions | EF Core, Identity, ASP.NET |
-| `MlhSupport.Infrastructure` | Repositories, EF Core, Identity | Api |
-| `MlhSupport.Api` | Controllers, DI composition, CORS, Swagger | Domain entities in responses |
-
-## 4. Repository Map
-
-```
-CLAUDE.md                       engineering rules for agents and developers
-.claude/rules/code-style.md     no code comments, English only
-.claude/launch.json             run configurations: api, frontend
-docs/ARCHITECTURE.md            this document
-docs/SYSTEM.md                  Leaply help guide (XML Q&A) that the agent reads
-policy/                         agent behavior policy, see policy/README.md
-backend/MlhSupport.sln
-backend/src/MlhSupport.Domain/Entities/Customer.cs
-backend/src/MlhSupport.Domain/Enums/SubscriptionStatus.cs
-backend/src/MlhSupport.Application/Customers/CustomerService.cs
-backend/src/MlhSupport.Application/Customers/CustomerDto.cs
-backend/src/MlhSupport.Application/Abstractions/ICustomerRepository.cs
-backend/src/MlhSupport.Infrastructure/Persistence/InMemoryCustomerRepository.cs
-backend/src/MlhSupport.Api/Controllers/CustomersController.cs
-backend/tests/MlhSupport.Application.Tests/
-agents/app/main.py              FastAPI app, /health
-agents/app/agents/              orchestrator and sub-agents
-agents/app/api/                 HTTP endpoints of the agent service
-agents/app/core/                agent loop, ModelClient, settings, case facts
-agents/app/policy/              policy loader and prompt assembly
-agents/app/tools/               tool definitions and backend adapters
-agents/tests/
-frontend/src/app/core/          API models and services
-frontend/src/app/features/      clients, chat
-```
-
-## 5. Agent Design
-
-### 5.1 Modes
-
-| Mode | Counterpart | Allowed tool classes | Output |
+| Role | How created | Home route | Can |
 |---|---|---|---|
-| `customer` | Customer | All; Write within autonomy tier | Chat replies |
-| `copilot` | Human agent | Identity, Read, Knowledge, Internal | Structured recommendation (COP rules) |
-| `qa` | Support lead | Read, Knowledge | Structured review (QA rules) |
+| Admin | Seeded (`admin` / `admin`) | `/admin/users` | See all users and details, analytics, mark concerns reviewed, generate summaries |
+| Teacher | Self-register | `/teacher/classes` | Manage own classes and enrollments |
+| Parent | Self-register | `/parent/children` | Link children by login, see their classes, subscribe a linked child |
+| Student | Self-register | `/student/home` | See classes and teachers, subscribe, use the support chat |
 
-The mode is set by the API per request. A message cannot change it.
+`POST /api/auth/login` and `/register` return `{token, user}`. The JWT carries `sub`, `login`, `name` and `role`; the frontend sends it as `Authorization: Bearer`. Role checks use `[Authorize(Roles = ...)]`; ownership checks (own class, linked child, own conversation, teacher of the student) live in Application services.
 
-### 5.2 Orchestrator and Sub-Agents
+The agent service authenticates to `/api/internal/*` with the shared secret header `X-Agent-Key` (`AgentService:ApiKey` in the API, `AGENT_API_KEY` in `agents/.env`). The student's id, name and age reach the agent only from the API, taken from the JWT; a chat message can never set them.
 
-```mermaid
-flowchart TD
-    M[Customer message] --> O[Orchestrator<br/>intent, clarity, priority, risk,<br/>verification, case facts]
-    O -->|billing, cancellation, plan_change| SB[Subscription and Billing]
-    O -->|refund, fraud_security| PR[Payments and Refunds]
-    O -->|account_access, technical| AT[Account and Tech]
-    O -->|content_guidance, health_safety,<br/>data_privacy, manipulation, feedback| PS[Plan and Safety]
-    O -->|other| O
-    SB & PR & AT & PS --> T[Tools through gates]
-    T --> API[.NET API]
-    SB & PR & AT & PS --> R[Result to orchestrator]
-    R --> F[Final reply or escalation]
-```
-
-Routing, per-agent tools and policy files are defined in `policy/README.md`, section Sub-Agent Routing. The orchestrator owns verification, case facts and the final handoff. Several issues in one message stay in one loop with shared case facts.
-
-### 5.3 Autonomy Tiers
-
-| Tier | Behavior | Examples |
-|---|---|---|
-| 🟢 GREEN | Automatic | Next payment info, cancellation steps, turn off auto-renewal, resend verification email, troubleshooting, bug ticket |
-| 🟡 YELLOW | Automatic with check or limit | Refund within policy up to 100 USD, duplicate charge, plan change, pause, multiple accounts |
-| 🔴 RED | Human only; agent gathers facts and escalates | Chargeback or legal threat, unmatched charge, health and safety, data deletion, refunds beyond policy, manipulation |
-
-### 5.4 Agent Loop
-
-```mermaid
-sequenceDiagram
-    participant API as .NET API
-    participant L as Agent loop
-    participant M as Gemini
-    participant G as Gates
-    participant B as Backend tools API
-    API->>L: message, conversation_id, mode, case facts
-    loop until model returns no tool calls
-        L->>M: system prompt + policy + case facts + history
-        M-->>L: tool calls or final text
-        L->>G: validate each tool call
-        alt allowed
-            G->>B: execute
-            B-->>L: result or structured error
-        else blocked
-            G-->>L: structured error
-        end
-        L->>L: update case facts
-    end
-    L-->>API: reply, case facts, actions, escalation
-```
-
-| Rule | Detail |
-|---|---|
-| Exit | The loop ends when the model returns a final answer with no tool calls. The iteration cap is a safety net only. |
-| Model access | Behind a `ModelClient` interface; Gemini implementation via `google-genai`. |
-| Case facts | Stored outside chat history, re-injected every turn, updated after every tool call. |
-| Tool output | Trimmed to fields relevant to the issue before being added to context. |
-| Errors | Every tool returns `{category, retryable, message}` on failure. Categories are listed in `policy/07_tools_and_errors.md`. |
-
-### 5.5 Enforcement in Code
-
-Prompt rules are probabilistic. These are enforced by the .NET API and mirrored in the agent gates:
-
-| Gate | Rule | Behavior when violated |
-|---|---|---|
-| Verification | SEC-01 | Write and account Read tools return `verification_required` |
-| Confirmation | ESC-01 | Write tools without a confirmation token from the latest customer turn return `confirmation_required` |
-| Refund cap | REF-10 | `process_refund` above 100 USD returns `limit_exceeded` |
-| Red tier | COR-09 | Write tools in a case marked 🔴 return `policy_blocked` |
-| Mode | TOOL-07 | Tools outside the mode's classes return `permission_denied` |
-| Idempotency | TOOL-05 | Repeated write with the same idempotency key is rejected |
-| Audit | SEC-12 | Every write and `flag_security` call is logged with conversation, tool, arguments, result, rule ID |
-
-### 5.6 Tools
-
-| Class | Tools |
-|---|---|
-| Identity | `verify_customer`, `find_accounts` |
-| Read | `get_customer`, `get_subscription`, `get_invoices`, `get_usage` |
-| Write | `subscribe`, `cancel_subscription`, `change_plan`, `process_refund` |
-| Support | `resend_verification_email`, `create_bug_ticket` |
-| Knowledge | `get_policy`, `search_help_center` |
-| Internal | `escalate_to_human`, `add_internal_note`, `flag_security` |
-
-Signatures, usage conditions and error handling: `policy/07_tools_and_errors.md`.
-
-## 6. End-to-End Flows
-
-### 6.1 Customer Chat
-
-1. Customer sends a message in the chat UI.
-2. Angular calls `POST /api/conversations/{id}/messages` on the .NET API.
-3. The API loads conversation state and case facts, sets `mode=customer`, and forwards to the agent service.
-4. The orchestrator analyzes intent, clarity, priority and risk, verifies the customer when needed, and routes each issue to a sub-agent.
-5. Sub-agents call tools; the API enforces gates and writes audit entries.
-6. Before any write, the agent summarizes the action and asks for explicit confirmation; the next customer turn carries the confirmation.
-7. The agent returns a reply, updated case facts, executed actions and an optional handoff.
-8. The API stores the turn and, on escalation, creates a handoff in the queue.
-
-### 6.2 Vague Request
-
-1. Clarity is C2 or C3 (`policy/01_intent_understanding.md`).
-2. Hedged facts become search ranges (INT-20 to INT-27).
-3. After verification, the agent looks up data first and asks the customer to confirm what it found.
-4. At most one question per message and two clarification rounds per issue; then the agent proposes options or escalates.
-
-### 6.3 Escalation
-
-1. Trigger: customer asks for a human, 🔴 tier, policy gap, no progress, or authority exceeded (ESC-10).
-2. The agent resolves what it can, then calls `escalate_to_human` with the handoff schema from `policy/08_confirmation_escalation_state.md`.
-3. The handoff contains customer, verified flag, priority, issues, facts, steps taken, rule IDs, recommended action and draft reply.
-4. The customer is told a specialist has the case and the response time from `get_policy("response_time")`.
-5. Staff pick it up in the handoff queue, optionally run copilot mode, and act.
-
-### 6.4 Copilot
-
-1. A support agent opens a ticket and requests a recommendation.
-2. The API calls the agent service with `mode=copilot`.
-3. The agent returns summary, interpretations, recommended action with rule IDs, risks, missing info and a draft reply. It never executes Write or Support tools.
-
-### 6.5 Quality Review
-
-1. A support lead selects a closed conversation.
-2. The API calls the agent service with `mode=qa`, transcript, tool log and case facts.
-3. The agent returns scores QA-01 to QA-07, policy violations, churn risk, root cause and one improvement suggestion.
-
-## 7. API
-
-### 7.1 Implemented
-
-| Method | Path | Service | Response |
-|---|---|---|---|
-| GET | `/api/customers` | .NET | `CustomerListItemDto[]`: `id, fullName, email, plan, subscriptionStatus` |
-| GET | `/api/customers/{id}` | .NET | `CustomerDetailsDto`: adds `nextPaymentDate, nextPaymentAmount, createdAt`; 404 if missing |
-| GET | `/health` | Python | `{"status": "ok"}` |
-
-### 7.2 Planned
-
-The four `/api/conversations` endpoints are implemented in `ConversationsController` (stored in PostgreSQL) and used by the Angular `HttpChatApi` (`frontend/src/app/core/chat/`). They are the chat entry point described as `/api/chat` in `CLAUDE.md`. The .NET API forwards each customer message to the agent service `POST /chat`; if the agent is down it answers 502 and the UI shows an error. The other rows are still target contracts; once implemented, the code and Swagger become the source of truth.
-
-| Method | Path | Service | Purpose |
-|---|---|---|---|
-| GET | `/api/conversations` | .NET | Conversation list: `Conversation[]` (`id, title, lastMessage, updatedAt`) |
-| POST | `/api/conversations` | .NET | Create a conversation: `{}` → `Conversation` |
-| GET | `/api/conversations/{id}/messages` | .NET | Messages: `ChatMessage[]` (`id, author: customer \| agent, text, createdAt`) |
-| POST | `/api/conversations/{id}/messages` | .NET | Customer chat turn: `{text}` → agent `ChatMessage` (whole reply at once) |
-| POST | `/api/conversations/{id}/messages/stream` | .NET | Same turn as a Server-Sent Events stream: `delta` events `{text}`, then `done`, or `error` `{message}`. Used by the chat UI |
-| POST | `/chat/stream` | Python | Streaming agent turn with the same events; `done` carries `{conversation_id}` |
-| POST | `/chat` | Python | Current: `{conversation_id?, message}` → `{conversation_id, reply}`; the service keeps the full history in memory per `conversation_id` (not in the database yet). Target: `{conversation_id, mode, message, history, case_facts}` → `{reply, case_facts, actions, handoff?}` |
-| GET | `/api/handoffs` | .NET | Escalation queue |
-| POST | `/api/handoffs/{id}/copilot` | .NET | Copilot recommendation for a ticket |
-| POST | `/api/conversations/{id}/review` | .NET | QA review of a closed conversation |
-| GET | `/api/audit` | .NET | Audit log |
-| * | `/api/tools/*` | .NET | One endpoint per tool in section 5.6, called only by the agent service |
-
-## 8. Data Model
-
-Implemented:
+## 5. Data Model
 
 | Entity | Fields |
 |---|---|
-| `Customer` | `Id`, `FullName`, `Email`, `Plan`, `SubscriptionStatus` (`None`, `Trial`, `Active`, `Cancelled`, `Paused`), `NextPaymentDate`, `NextPaymentAmount`, `CreatedAt` |
+| `User` | `Id`, `Login` (unique, lowercase), `PasswordHash`, `Name`, `Age`, `Role` (`Admin`, `Teacher`, `Student`, `Parent`), `SubscriptionType` (0 none, 1 default), `CreatedAt` |
+| `ParentChild` | `ParentId`, `ChildId` |
+| `SchoolClass` | `Id`, `Name`, `Subject`, `TeacherId`, `CreatedAt` |
+| `ClassEnrollment` | `ClassId`, `StudentId` |
+| `TeacherConcern` | `Id`, `StudentId`, `TeacherId`, `ConversationId?`, `Text`, `Category`, `Severity`, `Summary`, `Status` (`New`, `Reviewed`), `CreatedAt` |
+| `AuditEntry` | `Id`, `ActorUserId?`, `Actor` (login or `support-agent`), `Action`, `TargetUserId?`, `Details`, `CreatedAt` |
+| `Conversation` | `Id`, `UserId`, `Title`, `UpdatedAt` |
+| `ChatMessage` | `Id`, `ConversationId`, `Author` (`Customer` for the student, `Agent`), `Text`, `CreatedAt` |
 
-Required by the policy and not yet modeled:
+Concern categories: `Communication`, `Fairness`, `TeachingQuality`, `LatenessOrAbsence`, `Behavior`, `Safety`, `Other`. Severities: `Low`, `Medium`, `High`, `Critical`.
 
-| Entity or field | Needed for |
+Seed (`SeedData.cs`, applied on every startup; it only adds users, links, classes, enrollments and concerns that are missing; test passwords only):
+
+| Role | Password | Logins |
+|---|---|---|
+| Admin | `admin` | `admin` |
+| Teacher | `teacher` | `ms.harper` (Math 5A, English 5A), `mr.lee` (Science 7B, most concerns), `ms.patel` (History 6B, Art 4C), `mr.novak` (Geography 7A, includes a Critical safety concern), `ms.okafor` (Music 5B, Computer Science 8A) |
+| Student | `student` | `emma`, `liam`, `noah`, `mia`, `ava`, `lucas`, `sofia`, `ethan`, `chloe`, `mason`, `zoe`, `oliver`, `lily`, `jack`, `ella`, `leo`, `grace`, `henry`, `amelia`, `ben` (ages 9 to 15; `noah`, `ethan`, `lily`, `henry` have no subscription) |
+| Parent | `parent` | `anna` (emma, liam), `david` (noah, mia), `kate.brown` (ava, lucas), `maria.rossi` (sofia, ethan), `james.chen` (chloe, mason), `sarah.miller` (zoe, oliver), `peter.kim` (lily, jack), `laura.diaz` (ella, leo), `tom.evans` (grace, henry), `nina.white` (amelia, ben) |
+
+## 6. Agent Design
+
+| Agent | Prompt | Tools |
+|---|---|---|
+| Orchestrator | `agents/app/prompts/orchestrator.md` | `ask_help_guide`, `get_my_context`, `request_subscription_cancellation`, `confirm_subscription_cancellation`, `report_teacher_concern` |
+| Help guide specialist | `docs_reader.md` | `read_help_guide` (`docs/SYSTEM.md`) |
+| Concern classifier | `concern_classifier.md` | none; returns JSON `{category, severity, summary}` |
+| Teacher summary | `teacher_summary.md` | none; returns `{summary, recommended_actions}` |
+
+Loop: call the model, run requested tools, append results, repeat until the model answers without tool calls; the iteration cap is a safety net. Tool errors are structured `{category, retryable, message}`. Case facts (pending cancellation and similar) are kept per conversation outside the chat history and re-injected each turn.
+
+Enforced in code:
+
+| Rule | Where |
 |---|---|
-| `Subscription.Source` (`web`, `app_store`, `google_play`) | BIL-01 to BIL-05, REF-30, REF-31 |
-| `Subscription.CancelledAt`, `RenewalAt`, `TrialEndsAt` | BIL-11, REF-02, REF-05 |
-| `Invoice` (date, amount, currency, status, card last 4, refunded amount) | REF-01 to REF-12, SEN-20 to SEN-24, BIL-50 to BIL-53 |
-| `Customer.Region`, `SignInMethod` | REF-06 to REF-08, ACC-01, ACC-03 |
-| `UsageSummary` | REF-13, churn risk |
-| `Conversation`, `Message`, `CaseFacts` | Agent loop state |
-| `Handoff` | Escalation queue |
-| `AuditEntry` | SEC-12 |
-| `SecurityFlag` | SEC-22, SEN-23, SEN-24 |
+| Cancellation needs a pending request from an earlier turn and a confirmation in a later turn | Agent gate in `agents/app/tools/student_tools.py` |
+| Only the student's own subscription can be cancelled; idempotent; audited | `SubscriptionService.CancelByAgentAsync` |
+| A concern can only name a teacher who teaches the student | `ConcernService.ReportByAgentAsync` (403 otherwise) |
+| Every write creates an `AuditEntry` | Application services |
+| Safety or Critical concerns make the bot tell the student to talk to a parent or trusted adult now | Orchestrator prompt and `policy/04_safety_and_minors.md` |
 
-Seed data should cover every scenario in `policy/10_examples.md`.
+## 7. API
 
-## 9. Running Locally
+| Method | Path | Role | Purpose |
+|---|---|---|---|
+| POST | `/api/auth/register` | anonymous | `{login, password, name, age, role}` → `{token, user}` |
+| POST | `/api/auth/login` | anonymous | `{login, password}` → `{token, user}` |
+| GET | `/api/me` | any | Current user |
+| POST | `/api/me/subscription` | Student, Parent | `{childId?}`; student subscribes self, parent a linked child |
+| GET | `/api/me/classes` | Student | Classes with teachers and classmates |
+| GET, POST | `/api/me/children` | Parent | List `{child, classes}[]`; link `{childLogin}` |
+| DELETE | `/api/me/children/{childId}` | Parent | Unlink |
+| GET | `/api/users?role=` | Admin | `UserDto[]` |
+| GET | `/api/users/{id}` | Admin | `{user, parents, children, classes, concerns, audit}` |
+| GET, POST | `/api/classes` | Admin, Teacher, Student / Teacher | Visible classes / create `{name, subject}` |
+| POST | `/api/classes/{id}/students` | Teacher (owner) | Enroll `{studentLogin}` |
+| DELETE | `/api/classes/{id}/students/{studentId}` | Teacher (owner) | Remove |
+| GET, POST | `/api/conversations` | Student | Own conversations / create |
+| GET, POST | `/api/conversations/{id}/messages` | Student | Messages / one chat turn |
+| POST | `/api/conversations/{id}/messages/stream` | Student | Chat turn as SSE: `delta {text}`, `done`, `error {message}` |
+| GET | `/api/analytics/teachers` | Admin | `{totalConcerns, openConcerns, highOrCriticalConcerns, byCategory, teachers[]}` |
+| GET | `/api/analytics/teachers/{id}` | Admin | `{stats, concerns}` |
+| POST | `/api/analytics/teachers/{id}/summary` | Admin | `{summary, recommendedActions, generatedAt}`; 502 if the agent service is down |
+| PATCH | `/api/concerns/{id}` | Admin | `{status: "New" \| "Reviewed"}` |
+| GET | `/api/internal/students/{id}/context` | agent key | `{id, name, age, subscriptionType, teachers[{teacherId, teacherName, classId, className, subject}]}` |
+| POST | `/api/internal/students/{id}/subscription/cancel` | agent key | `{studentId, subscriptionType, changed}` |
+| POST | `/api/internal/concerns` | agent key | `{studentId, teacherId, conversationId?, text, category, severity, summary}` |
+| GET | `/health` | anonymous | API health |
 
-Prerequisites: .NET 8 SDK, Node.js 20+, Python 3.12, a Gemini API key.
+Errors are RFC 9110 problem details: 400 validation, 401 login or token, 403 role or ownership, 404, 409 conflict, 502 agent unavailable.
+
+Agent service: `POST /chat` and `/chat/stream` take `{conversation_id, message, user: {id, name, age}}`; `POST /analytics/teacher-summary` takes `{teacher_name, concerns[{text, category, severity, created_at}]}`.
+
+## 8. Running Locally
 
 | Service | Command | URL |
 |---|---|---|
 | Backend | `cd backend && dotnet run --project src/MlhSupport.Api` | http://localhost:5162, Swagger at `/swagger` |
 | Frontend | `cd frontend && npm install && npm start` | http://localhost:4200 |
-| Agents | `cd agents && python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt && uvicorn app.main:app --reload --port 8000` | http://localhost:8000 |
-
-On macOS or Linux use `source .venv/bin/activate`.
-
-Configuration:
+| Agents | `cd agents && source .venv/bin/activate && uvicorn app.main:app --reload --port 8000` | http://localhost:8000 |
 
 | File | Key | Purpose |
 |---|---|---|
-| `agents/.env` (copy of `.env.example`) | `GEMINI_API_KEY` | Model access; never committed. In GitHub it is the Actions secret `GEMINI_API_KEY` |
-| `agents/.env` | `GEMINI_MODEL` | Model id to call (GitHub Actions variable `GEMINI_MODEL`) |
-| `agents/.env` | `INLINE_SYSTEM_PROMPT` | `true` when the model rejects system instructions; the prompt is then sent as the first user message |
-| `agents/.env` | `BACKEND_API_URL` | Default `http://localhost:5162/api` |
+| `backend/src/MlhSupport.Api/secrets.json` | `ConnectionStrings:Default` | PostgreSQL connection |
+| `secrets.json` | `Jwt:Key` | JWT signing key, at least 32 characters |
+| `secrets.json` | `AgentService:ApiKey` | Shared agent key, same value as `AGENT_API_KEY` |
+| `agents/.env` | `GEMINI_API_KEY`, `GEMINI_MODEL` | Model access |
+| `agents/.env` | `API_BASE_URL`, `AGENT_API_KEY` | How the agent reaches `/api/internal/*` |
 | `frontend/src/environments/environment.ts` | `apiUrl` | Default `http://localhost:5162/api` |
-| `backend/src/MlhSupport.Api/Program.cs` | CORS origin | Any loopback origin (any port on localhost) |
-| `backend/src/MlhSupport.Api/appsettings.json` | `AgentService:BaseUrl`, `AgentService:TimeoutSeconds` | Default `http://localhost:8000`, 240 seconds |
 
-Never commit `.env`, keys or `appsettings.Local.json`.
+Never commit `secrets.json`, `.env` or keys.
 
-## 10. Using the System
-
-| Screen | Route | What you can do | Status |
-|---|---|---|---|
-| Clients | `/clients` | See all customers with plan and subscription status | Implemented |
-| Client details | `/clients/:id` | See all stored data for a customer | Implemented |
-| Support chat | `/chat` | Talk to the support agent as a customer | Placeholder; chat UI with a mock API on branch `il-basic-front-app` |
-| Handoff queue | planned | Review escalations, run copilot, act | Planned |
-| Quality review | planned | Score conversations, see violations and churn risk | Planned |
-
-Demo scenarios: use the use cases in `policy/10_examples.md`, at least one per tier (🟢, 🟡, 🔴), one vague message, and one prompt-injection attempt.
-
-## 11. Testing
+## 9. Testing
 
 | Level | Location | Covers |
 |---|---|---|
-| Backend unit | `backend/tests/MlhSupport.Application.Tests` | Use cases, gates, refund rules |
-| Agent unit | `agents/tests` | Gates, case facts, tool adapters, policy loading, with a fake `ModelClient` |
-| Scenario | `agents/tests` | Every example in `policy/10_examples.md`: expected tool calls, blocked actions, escalation reason |
+| Backend unit | `backend/tests/MlhSupport.Application.Tests` | Auth, family and class permissions, subscription cancel and audit, concern ownership, analytics aggregation, conversation ownership |
+| Agent unit | `agents/tests` | Agent loop, help guide, cancellation gate, concern flow, injection attempts, backend adapter, analytics endpoint |
+| Frontend | `cd frontend && npm run build` | Type checks |
 
-A scenario test passes when the expected rule IDs are applied, no hard rule is broken, and the gates block every forbidden write.
-
-## 12. Working Rules for Agents
-
-1. Read `CLAUDE.md` and `.claude/rules/code-style.md` before changing code. No code comments, English only.
-2. Respect the dependency rules in section 3; never add a reference against them.
-3. Business rules and enforcement live in the .NET API. The Python service never accesses the database.
-4. Agent behavior changes go into `policy/` with a rule ID, not into code or ad-hoc prompts. Update `policy/README.md` version when policy changes.
-5. Any new tool must be added in `policy/07_tools_and_errors.md`, the sub-agent routing table in `policy/README.md`, the API, and section 5.6 of this document.
-6. Every new behavior needs a scenario test.
-7. Update the Status columns in this document when a planned item is implemented.
-8. Build order and progress: `CLAUDE.md`, Build order.
-
-## 13. Known Gaps
+## 10. Known Gaps
 
 | Gap | Impact |
 |---|---|
-| Seed plans (`Yoga Monthly`, `Wellness Annual`, `Meditation Monthly`) do not match Leaply programs | Demo realism |
-| No purchase source, invoices or region in the data model | Billing and refund rules cannot run |
-| Chat, agent loop, tools and gates not implemented | Core capability missing |
-| No authentication on API | Staff endpoints are open |
-| Policy values marked as assumptions: 100 USD refund limit, 30-day deletion, 3 to 7 day pending release | Must be confirmed before production |
+| Agent conversation history and case facts are in memory | Lost when the agent service restarts |
+| No human handoff queue yet | Safety concerns are recorded and flagged in analytics but not routed to a person |
+| No password reset or account editing | Admin cannot change users from the UI |

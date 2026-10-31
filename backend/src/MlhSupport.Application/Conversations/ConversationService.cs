@@ -1,60 +1,63 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using MlhSupport.Application.Abstractions;
+using MlhSupport.Application.Common;
 using MlhSupport.Domain.Entities;
 using MlhSupport.Domain.Enums;
 
 namespace MlhSupport.Application.Conversations;
 
-public class ConversationService(IConversationRepository repository, IAgentGateway agent)
+public class ConversationService(IConversationRepository repository, IUserRepository users, IAgentGateway agent)
 {
     private const int TitleMaxLength = 40;
 
-    public async Task<IReadOnlyList<ConversationDto>> GetAllAsync(CancellationToken ct)
+    public async Task<IReadOnlyList<ConversationDto>> GetAllAsync(Guid userId, CancellationToken ct)
     {
-        var conversations = await repository.GetAllAsync(ct);
+        var conversations = await repository.GetByUserAsync(userId, ct);
         return conversations.OrderByDescending(c => c.UpdatedAt).Select(ToDto).ToList();
     }
 
-    public async Task<ConversationDto> CreateAsync(CancellationToken ct)
+    public async Task<ConversationDto> CreateAsync(Guid userId, CancellationToken ct)
     {
-        var conversation = new Conversation { Id = Guid.NewGuid(), UpdatedAt = DateTime.UtcNow };
+        var conversation = new Conversation { Id = Guid.NewGuid(), UserId = userId, UpdatedAt = DateTime.UtcNow };
         await repository.AddAsync(conversation, ct);
         return ToDto(conversation);
     }
 
-    public async Task<IReadOnlyList<ChatMessageDto>?> GetMessagesAsync(Guid id, CancellationToken ct)
+    public async Task<IReadOnlyList<ChatMessageDto>?> GetMessagesAsync(Guid userId, Guid id, CancellationToken ct)
     {
-        var conversation = await repository.GetByIdAsync(id, ct);
+        var conversation = await GetOwnedAsync(userId, id, ct);
         return conversation?.Messages.OrderBy(m => m.CreatedAt).Select(ToDto).ToList();
     }
 
-    public async Task<ChatMessageDto?> SendMessageAsync(Guid id, string text, CancellationToken ct)
+    public async Task<ChatMessageDto?> SendMessageAsync(Guid userId, Guid id, string text, CancellationToken ct)
     {
-        var conversation = await repository.GetByIdAsync(id, ct);
+        var conversation = await GetOwnedAsync(userId, id, ct);
         if (conversation is null)
         {
             return null;
         }
 
+        var user = await GetAgentUserAsync(userId, ct);
         await AppendCustomerMessageAsync(conversation, text, ct);
-        var reply = await agent.GetReplyAsync(id, text, ct);
+        var reply = await agent.GetReplyAsync(id, user, text, ct);
         var agentMessage = await AppendAsync(conversation, MessageAuthor.Agent, reply, ct);
         return ToDto(agentMessage);
     }
 
     public async IAsyncEnumerable<string> StreamMessageAsync(
-        Guid id, string text, [EnumeratorCancellation] CancellationToken ct)
+        Guid userId, Guid id, string text, [EnumeratorCancellation] CancellationToken ct)
     {
-        var conversation = await repository.GetByIdAsync(id, ct)
-            ?? throw new KeyNotFoundException($"Conversation {id} does not exist");
+        var conversation = await GetOwnedAsync(userId, id, ct)
+            ?? throw new NotFoundException($"Conversation {id} does not exist");
 
+        var user = await GetAgentUserAsync(userId, ct);
         await AppendCustomerMessageAsync(conversation, text, ct);
 
         var reply = new StringBuilder();
         try
         {
-            await foreach (var delta in agent.StreamReplyAsync(id, text, ct))
+            await foreach (var delta in agent.StreamReplyAsync(id, user, text, ct))
             {
                 reply.Append(delta);
                 yield return delta;
@@ -67,6 +70,18 @@ public class ConversationService(IConversationRepository repository, IAgentGatew
                 await AppendAsync(conversation, MessageAuthor.Agent, reply.ToString(), CancellationToken.None);
             }
         }
+    }
+
+    private async Task<Conversation?> GetOwnedAsync(Guid userId, Guid id, CancellationToken ct)
+    {
+        var conversation = await repository.GetByIdAsync(id, ct);
+        return conversation is not null && conversation.UserId == userId ? conversation : null;
+    }
+
+    private async Task<AgentUserContext> GetAgentUserAsync(Guid userId, CancellationToken ct)
+    {
+        var user = await users.GetByIdAsync(userId, ct) ?? throw new NotFoundException("User not found");
+        return new AgentUserContext(user.Id, user.Name, user.Age);
     }
 
     private async Task AppendCustomerMessageAsync(Conversation conversation, string text, CancellationToken ct)

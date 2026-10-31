@@ -1,0 +1,23 @@
+<div class="card auth-card">
+  <div class="auth-brand">
+    <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="var(--primary)"/><path d="M8 17l12-6 12 6-12 6z" fill="var(--accent)"/><path d="M13 20v6c0 2 3.5 4 7 4s7-2 7-4v-6l-7 3.5z" fill="#ffffff"/></svg>
+    <span>{{ productName }}</span>
+  </div>
+  <h2>Welcome back</h2>
+  <p class="lead">Log in to see your classes.</p>
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <label class="field">
+      <span>Login</span>
+      <input formControlName="login" autocomplete="username" />
+    </label>
+    <label class="field">
+      <span>Password</span>
+      <input type="password" formControlName="password" autocomplete="current-password" />
+    </label>
+    @if (error()) {
+      <p class="form-error" role="alert">{{ error() }}</p>
+    }
+    <button type="submit" [disabled]="submitting()">{{ submitting() ? 'Logging in...' : 'Log in' }}</button>
+  </form>
+  <p class="switch">New here? <a routerLink="/register">Create an account</a></p>
+</div>

@@ -22,6 +22,44 @@ namespace MlhSupport.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("MlhSupport.Domain.Entities.AuditEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Actor")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Details")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid?>("TargetUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("TargetUserId");
+
+                    b.ToTable("audit_entries", (string)null);
+                });
+
             modelBuilder.Entity("MlhSupport.Domain.Entities.ChatMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -49,6 +87,21 @@ namespace MlhSupport.Infrastructure.Persistence.Migrations
                     b.ToTable("chat_messages", (string)null);
                 });
 
+            modelBuilder.Entity("MlhSupport.Domain.Entities.ClassEnrollment", b =>
+                {
+                    b.Property<Guid>("ClassId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("ClassId", "StudentId");
+
+                    b.HasIndex("StudentId");
+
+                    b.ToTable("class_enrollments", (string)null);
+                });
+
             modelBuilder.Entity("MlhSupport.Domain.Entities.Conversation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -62,14 +115,32 @@ namespace MlhSupport.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("UpdatedAt");
+                    b.HasIndex("UserId", "UpdatedAt");
 
                     b.ToTable("conversations", (string)null);
                 });
 
-            modelBuilder.Entity("MlhSupport.Domain.Entities.Customer", b =>
+            modelBuilder.Entity("MlhSupport.Domain.Entities.ParentChild", b =>
+                {
+                    b.Property<Guid>("ParentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("ParentId", "ChildId");
+
+                    b.HasIndex("ChildId");
+
+                    b.ToTable("parent_children", (string)null);
+                });
+
+            modelBuilder.Entity("MlhSupport.Domain.Entities.SchoolClass", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -77,72 +148,119 @@ namespace MlhSupport.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<decimal?>("NextPaymentAmount")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
-
-                    b.Property<DateTime?>("NextPaymentDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Plan")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("SubscriptionStatus")
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("TeacherId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TeacherId");
+
+                    b.ToTable("classes", (string)null);
+                });
+
+            modelBuilder.Entity("MlhSupport.Domain.Entities.TeacherConcern", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid?>("ConversationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Severity")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("TeacherId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Email")
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("TeacherId", "CreatedAt");
+
+                    b.ToTable("teacher_concerns", (string)null);
+                });
+
+            modelBuilder.Entity("MlhSupport.Domain.Entities.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Age")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Login")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("SubscriptionType")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Login")
                         .IsUnique();
 
-                    b.ToTable("customers", (string)null);
+                    b.HasIndex("Role");
 
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            CreatedAt = new DateTime(2026, 3, 2, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "olena@example.com",
-                            FullName = "Olena Kovalenko",
-                            NextPaymentAmount = 14.99m,
-                            NextPaymentDate = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Plan = "Yoga Monthly",
-                            SubscriptionStatus = "Active"
-                        },
-                        new
-                        {
-                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            CreatedAt = new DateTime(2026, 10, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "max@example.com",
-                            FullName = "Max Brown",
-                            NextPaymentAmount = 89.00m,
-                            NextPaymentDate = new DateTime(2026, 11, 3, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Plan = "Wellness Annual",
-                            SubscriptionStatus = "Trial"
-                        },
-                        new
-                        {
-                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
-                            CreatedAt = new DateTime(2025, 12, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "sofia@example.com",
-                            FullName = "Sofia Martinez",
-                            Plan = "Meditation Monthly",
-                            SubscriptionStatus = "Cancelled"
-                        });
+                    b.ToTable("users", (string)null);
                 });
 
             modelBuilder.Entity("MlhSupport.Domain.Entities.ChatMessage", b =>
@@ -154,9 +272,77 @@ namespace MlhSupport.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("MlhSupport.Domain.Entities.ClassEnrollment", b =>
+                {
+                    b.HasOne("MlhSupport.Domain.Entities.SchoolClass", null)
+                        .WithMany("Enrollments")
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MlhSupport.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MlhSupport.Domain.Entities.Conversation", b =>
+                {
+                    b.HasOne("MlhSupport.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MlhSupport.Domain.Entities.ParentChild", b =>
+                {
+                    b.HasOne("MlhSupport.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MlhSupport.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MlhSupport.Domain.Entities.SchoolClass", b =>
+                {
+                    b.HasOne("MlhSupport.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MlhSupport.Domain.Entities.TeacherConcern", b =>
+                {
+                    b.HasOne("MlhSupport.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MlhSupport.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MlhSupport.Domain.Entities.Conversation", b =>
                 {
                     b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("MlhSupport.Domain.Entities.SchoolClass", b =>
+                {
+                    b.Navigation("Enrollments");
                 });
 #pragma warning restore 612, 618
         }

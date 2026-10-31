@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../auth/auth.service';
 import { ChatApi } from './chat-api';
 import { ChatMessage, Conversation } from './chat.models';
 import { SseParser } from './sse-parser';
@@ -9,6 +10,7 @@ import { SseParser } from './sse-parser';
 @Injectable()
 export class HttpChatApi extends ChatApi {
   private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
   private readonly baseUrl = `${environment.apiUrl}/conversations`;
 
   getConversations(): Observable<Conversation[]> {
@@ -35,6 +37,15 @@ export class HttpChatApi extends ChatApi {
     });
   }
 
+  private streamHeaders(): Record<string, string> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', Accept: 'text/event-stream' };
+    const token = this.auth.token();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  }
+
   private async readStream(
     url: string,
     text: string,
@@ -44,10 +55,13 @@ export class HttpChatApi extends ChatApi {
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+        headers: this.streamHeaders(),
         body: JSON.stringify({ text }),
         signal
       });
+      if (response.status === 401) {
+        this.auth.logout();
+      }
       if (!response.ok || !response.body) {
         throw new Error(`Chat request failed with status ${response.status}`);
       }

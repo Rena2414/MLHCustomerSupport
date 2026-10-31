@@ -14,7 +14,7 @@ def build(doc_file, turns):
 
 def orchestrator_calls(model):
     prompt = load_prompt("orchestrator")
-    return [call for call in model.calls if call[0] == prompt]
+    return [call for call in model.calls if call[0].startswith(prompt)]
 
 
 def test_subagent_reads_file_and_orchestrator_gets_only_the_summary(doc_file):
@@ -49,7 +49,13 @@ def test_orchestrator_and_subagent_have_separate_toolsets(doc_file):
         ],
     )
     orchestrator.handle("c1", "hello")
-    assert model.calls[0][2] == ["ask_help_guide"]
+    assert model.calls[0][2] == [
+        "ask_help_guide",
+        "get_my_context",
+        "request_subscription_cancellation",
+        "confirm_subscription_cancellation",
+        "report_teacher_concern",
+    ]
     assert model.calls[1][2] == ["read_help_guide"]
 
 

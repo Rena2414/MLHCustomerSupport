@@ -3,10 +3,22 @@
   padding: 0.15rem 0.65rem;
   border-radius: 999px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-.badge.active { color: var(--success); background: var(--success-bg); }
-.badge.trial { color: var(--warning); background: var(--warning-bg); }
-.badge.cancelled { color: var(--danger); background: var(--danger-bg); }
-.badge.paused, .badge.none { color: var(--muted); background: var(--surface-alt); }
+.badge.subscribed { color: var(--success); background: var(--success-bg); }
+.badge.none { color: var(--muted); background: var(--surface-alt); box-shadow: inset 0 0 0 1px var(--border); }
+.badge.new { color: var(--warning); background: var(--warning-bg); }
+
+.badge.role-admin { color: #ffffff; background: var(--primary-dark); }
+.badge.role-teacher { color: var(--primary-dark); background: var(--primary-soft); }
+.badge.role-student { color: var(--accent-dark); background: var(--accent-soft); }
+.badge.role-parent { color: var(--success); background: var(--success-bg); }
+
+.badge.severity-low { color: var(--muted); background: var(--surface-alt); box-shadow: inset 0 0 0 1px var(--border); }
+.badge.severity-medium { color: var(--warning); background: var(--warning-bg); }
+.badge.severity-high { color: var(--danger); background: var(--danger-bg); }
+.badge.severity-critical { color: #ffffff; background: var(--danger); }
+
+.badge.category, .badge.subject { color: var(--primary-dark); background: var(--primary-soft); }

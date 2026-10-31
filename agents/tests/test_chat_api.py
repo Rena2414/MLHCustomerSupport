@@ -75,3 +75,31 @@ def test_settings_require_key_and_model():
     with pytest.raises(ConfigurationError):
         Settings(gemini_api_key="k", gemini_model="", _env_file=None).require_model_access()
     Settings(gemini_api_key="k", gemini_model="m", _env_file=None).require_model_access()
+
+
+def test_chat_passes_the_user_to_the_case_facts(client, doc_file):
+    orchestrator = OrchestratorAgent(
+        ScriptedModel([final_turn("hi Mia")]), InMemoryConversationStore(), DocsReaderAgent(ScriptedModel([]), doc_file)
+    )
+    app.dependency_overrides[get_orchestrator] = lambda: orchestrator
+    response = client.post(
+        "/chat",
+        json={"conversation_id": "c1", "message": "hello", "user": {"id": "student-1", "name": "Mia", "age": 11}},
+    )
+    assert response.status_code == 200
+    student = orchestrator.facts_for("c1").student
+    assert (student.id, student.name, student.age) == ("student-1", "Mia", 11)
+
+
+def test_chat_stream_passes_the_user_to_the_case_facts(client, doc_file):
+    orchestrator = OrchestratorAgent(
+        ScriptedModel([final_turn("hi")]), InMemoryConversationStore(), DocsReaderAgent(ScriptedModel([]), doc_file)
+    )
+    app.dependency_overrides[get_orchestrator] = lambda: orchestrator
+    client.post("/chat/stream", json={"conversation_id": "c2", "message": "hi", "user": {"id": "student-7"}})
+    assert orchestrator.facts_for("c2").student.id == "student-7"
+
+
+def test_chat_rejects_a_user_without_id(client, doc_file):
+    override(ScriptedModel([]), doc_file)
+    assert client.post("/chat", json={"message": "hi", "user": {"name": "x"}}).status_code == 422

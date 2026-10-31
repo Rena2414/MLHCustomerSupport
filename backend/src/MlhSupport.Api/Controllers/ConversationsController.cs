@@ -1,25 +1,28 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MlhSupport.Api.Web;
 using MlhSupport.Application.Conversations;
 
 namespace MlhSupport.Api.Controllers;
 
 [ApiController]
+[Authorize(Roles = Roles.Student)]
 [Route("api/[controller]")]
 public class ConversationsController(ConversationService service) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ConversationDto>>> GetAll(CancellationToken ct) =>
-        Ok(await service.GetAllAsync(ct));
+        Ok(await service.GetAllAsync(User.GetUserId(), ct));
 
     [HttpPost]
     public async Task<ActionResult<ConversationDto>> Create(CancellationToken ct) =>
-        Ok(await service.CreateAsync(ct));
+        Ok(await service.CreateAsync(User.GetUserId(), ct));
 
     [HttpGet("{id:guid}/messages")]
     public async Task<ActionResult<IReadOnlyList<ChatMessageDto>>> GetMessages(Guid id, CancellationToken ct)
     {
-        var messages = await service.GetMessagesAsync(id, ct);
+        var messages = await service.GetMessagesAsync(User.GetUserId(), id, ct);
         return messages is null ? NotFound() : Ok(messages);
     }
 
@@ -33,7 +36,7 @@ public class ConversationsController(ConversationService service) : ControllerBa
 
         try
         {
-            var reply = await service.SendMessageAsync(id, request.Text, ct);
+            var reply = await service.SendMessageAsync(User.GetUserId(), id, request.Text, ct);
             return reply is null ? NotFound() : Ok(reply);
         }
         catch (AgentUnavailableException ex)
@@ -51,7 +54,7 @@ public class ConversationsController(ConversationService service) : ControllerBa
             return;
         }
 
-        if (await service.GetMessagesAsync(id, ct) is null)
+        if (await service.GetMessagesAsync(User.GetUserId(), id, ct) is null)
         {
             Response.StatusCode = StatusCodes.Status404NotFound;
             return;
@@ -63,7 +66,7 @@ public class ConversationsController(ConversationService service) : ControllerBa
 
         try
         {
-            await foreach (var delta in service.StreamMessageAsync(id, request.Text, ct))
+            await foreach (var delta in service.StreamMessageAsync(User.GetUserId(), id, request.Text, ct))
             {
                 await WriteEventAsync("delta", new { text = delta }, ct);
             }

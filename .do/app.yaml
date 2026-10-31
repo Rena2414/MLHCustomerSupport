@@ -26,6 +26,12 @@ services:
       - key: AgentService__BaseUrl
         scope: RUN_TIME
         value: http://agents:8080
+      - key: Jwt__Key
+        scope: RUN_TIME
+        type: SECRET
+      - key: AgentService__ApiKey
+        scope: RUN_TIME
+        type: SECRET
       - key: ConnectionStrings__Default
         scope: RUN_TIME
         value: Host=${db.HOSTNAME};Port=${db.PORT};Username=${db.USERNAME};Password=${db.PASSWORD};Database=${db.DATABASE};SSL Mode=Require;Trust Server Certificate=true
@@ -46,9 +52,12 @@ services:
       http_path: /health
       port: 8080
     envs:
-      - key: BACKEND_API_URL
+      - key: API_BASE_URL
         scope: RUN_TIME
-        value: http://backend:8080/api
+        value: http://backend:8080
+      - key: AGENT_API_KEY
+        scope: RUN_TIME
+        type: SECRET
       - key: GEMINI_API_KEY
         scope: RUN_TIME
         type: SECRET
