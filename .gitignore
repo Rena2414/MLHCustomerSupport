@@ -218,3 +218,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+frontend/dist/
+frontend/.angular/
+backend/**/bin/
+backend/**/obj/
+.DS_Store
+.idea/
+.vscode/
+.vs/
+*.user
+*.suo
+node_modules/
+appsettings.Local.json
