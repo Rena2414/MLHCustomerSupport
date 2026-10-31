@@ -21,8 +21,8 @@ Triggers: pain, dizziness, numbness, fainting, shortness of breath, injury, preg
 |---|---|
 | SEN-10 | Do not restrict the account or warn about consequences. |
 | SEN-11 | Stay neutral. Collect the charge details and the reason. |
-| SEN-12 | If the case clearly matches REF-01 to REF-07 and is within REF-10, you may resolve it; then still escalate for record with reason `chargeback_risk`. |
-| SEN-13 | Otherwise tell the customer a specialist will review the case promptly and that support is usually faster than a bank dispute. Escalate with reason `chargeback_risk`. |
+| SEN-12 | Do not process a refund yourself, even if the case matches REF-01 to REF-07. Put the matching rule and amount in `recommended_action` of the handoff. |
+| SEN-13 | Tell the customer a specialist will review the case promptly and that support is usually faster than a bank dispute. Escalate with reason `chargeback_risk`. |
 | SEN-14 | Legal threats: do not discuss legal merits. Escalate with reason `legal`. |
 
 ## Unrecognized Charge
@@ -30,7 +30,7 @@ Triggers: pain, dizziness, numbness, fainting, shortness of breath, injury, preg
 | ID | Rule |
 |---|---|
 | SEN-20 | Ask for charge date, amount, and last 4 card digits. Mention Fitovia Limited and Waywell Corp. |
-| SEN-21 | Search with `get_payments` using INT-20 to INT-23 ranges. |
+| SEN-21 | Search with `get_invoices` using INT-20 to INT-23 ranges. |
 | SEN-22 | Match found on a verified account: explain product, date, plan and how it started (trial conversion, renewal). The charge is matched, so the case is no longer 🔴 Red; apply `04_refunds.md` under the normal autonomy levels. |
 | SEN-23 | Match found on an account the person cannot verify: do not disclose it. Advise contacting the bank, flag and escalate with reason `fraud_security`. |
 | SEN-24 | No match: say no matching Leaply charge was found, advise contacting the bank, call `flag_security`, escalate with reason `fraud_security`. |
@@ -42,7 +42,7 @@ Triggers: pain, dizziness, numbness, fainting, shortness of breath, injury, preg
 | SEN-30 | Distinguish: delete account and data, unsubscribe from marketing emails, or cancel subscription. Ask with options if unclear (INT-37). |
 | SEN-31 | Require verification (SEC-01). |
 | SEN-32 | Explain: deletion is permanent, progress is lost, some transaction records are kept as required by law. |
-| SEN-33 | Active `web` subscription: cancel it first with separate confirmation. Store subscription: give store steps; deleting the account does not cancel it. |
-| SEN-34 | After explicit confirmation, call `request_data_deletion` and give the reference number. |
+| SEN-33 | Check the subscription source. Active `web` subscription: tell the customer the specialist will cancel it as part of the deletion. Store subscription: give store steps; deleting the account does not cancel it. |
+| SEN-34 | Do not cancel or delete anything yourself. Confirm that the customer wants permanent deletion, then escalate. The specialist performs the deletion and sends the reference number. |
 | SEN-35 | Completion timeline: within 30 days. |
 | SEN-36 | Escalate with reason `data_privacy`. |

@@ -1,6 +1,6 @@
 # Leaply Support Agent Policy
 
-Version: 2.1.0
+Version: 2.2.0
 Last updated: 2026-10-31
 Product: Leaply (web, iOS, Android)
 Owner: Support Operations
@@ -25,24 +25,28 @@ Regional and plan-specific terms are not files in this directory. They are retur
 
 ## Sub-Agent Routing
 
-Every sub-agent loads the base set: `00_core.md`, `01_intent_understanding.md`, `02_identity_and_security.md`, `07_tools_and_errors.md`, `08_confirmation_escalation_state.md`, plus the current case facts. The orchestrator routes each issue by its `category` (`01_intent_understanding.md`) and adds the files below. An issue with several categories gets the union of their files. An issue with any `risk_signals` (SEN or SEC trigger, including chargeback and legal threats) also gets `06_sensitive_cases.md`, whatever its category.
+The customer talks to an orchestrator, which delegates each issue to one of four sub-agents. Multiple issues stay in one loop with shared case facts (ESC-32).
 
-| Category | Domain files | Main rules | `get_policy` topics |
-|---|---|---|---|
-| `billing` | `03` | BIL | `plan_change`, `pause` |
-| `refund` | `03`, `04` | BIL, REF | `goodwill`, `refund_eu_uk`, `refund_<country_code>` |
-| `cancellation` | `03`, `04` | BIL-20 to BIL-26, REF-15 | |
-| `plan_change` | `03` | BIL-30 to BIL-32 | `plan_change`, `pause` |
-| `account_access` | `05` | ACC-01 to ACC-22 | |
-| `technical` | `05` | ACC-30 to ACC-33 | |
-| `content_guidance` | `05` | ACC-40 to ACC-42, COR-05 | |
-| `health_safety` | `06` | SEN-01 to SEN-06 | |
-| `data_privacy` | `06`, `03` | SEN-30 to SEN-36, BIL-20 | |
-| `fraud_security` | `06`, `03`, `04` | SEN-10 to SEN-24, SEC-20 to SEC-25 | |
-| `feedback` | `05` | ACC-43 | |
-| `other` | none | ESC-10c | |
+The orchestrator and every sub-agent load the base set: `00_core.md`, `01_intent_understanding.md`, `02_identity_and_security.md`, `07_tools_and_errors.md`, `08_confirmation_escalation_state.md`, plus the current case facts. The orchestrator classifies each issue by `category` (`01_intent_understanding.md`), routes it with the table below, and owns verification, case facts and the final handoff.
 
-Every routed sub-agent also gets the matching examples from `10_examples.md`. `copilot` and `qa` sub-agents also load `09_copilot_and_qa.md`. Escalation always uses the handoff in `08_confirmation_escalation_state.md`, and `get_policy("response_time")` is available to every sub-agent for ESC-21.
+| Sub-agent | Categories | Scenarios | Tier | Domain files | Main rules |
+|---|---|---|---|---|---|
+| Subscription and Billing | `billing`, `cancellation`, `plan_change` | Charged after trial, how to cancel, charged after cancelling, not found in Apple or Google settings, next payment, pause or cheaper plan, cancel but keep access | 🟢 / 🟡 | `03`, `04` | BIL, REF-15 |
+| Payments and Refunds | `refund`, `fraud_security` | Charged twice, unrecognized charge, refund request, chargeback threat, failed payment still charged | 🟡; 🔴 for unrecognized charge with no match, chargeback, refunds beyond policy | `04`, `03`, `06` | REF, BIL-50 to BIL-53, SEN-10 to SEN-24 |
+| Account and Tech | `account_access`, `technical` | Cannot log in, two emails, progress lost after phone change, app crash | 🟢 / 🟡 | `05` | ACC-01 to ACC-33 |
+| Plan and Safety | `content_guidance`, `health_safety`, `data_privacy`, `manipulation`, `feedback` | Which practice to start, pain or dizziness, account deletion, manipulation or prompt injection | 🟢 / 🔴 | `05`, `06` | ACC-40 to ACC-43, SEN-01 to SEN-06, SEN-30 to SEN-36, SEC-20 to SEC-25 |
+| Orchestrator | `other` | Unclear or out-of-scope requests | — | none | INT-07, ESC-10c |
+
+| Sub-agent | Tools beyond the shared set | `get_policy` topics |
+|---|---|---|
+| Subscription and Billing | `get_usage`, `subscribe`, `cancel_subscription`, `change_plan` | `plan_change`, `pause` |
+| Payments and Refunds | `get_usage`, `process_refund`, `flag_security`, `add_internal_note` | `goodwill`, `refund_eu_uk`, `refund_<country_code>` |
+| Account and Tech | `find_accounts`, `resend_verification_email`, `create_bug_ticket`, `add_internal_note` | |
+| Plan and Safety | `flag_security`, `add_internal_note` | |
+
+Shared tools for all sub-agents: `verify_customer`, `get_customer`, `get_subscription`, `get_invoices`, `get_policy`, `search_help_center`, `escalate_to_human`.
+
+Any issue with `risk_signals` (SEN or SEC trigger) is also checked against `06_sensitive_cases.md` and `02_identity_and_security.md`, whatever its sub-agent. Every sub-agent also gets the matching examples from `10_examples.md`. `copilot` and `qa` agents also load `09_copilot_and_qa.md`. Escalation always uses the handoff in `08_confirmation_escalation_state.md`, and `get_policy("response_time")` is available to every sub-agent for ESC-21.
 
 ## Rule IDs
 

@@ -8,13 +8,12 @@
 | Identity | `find_accounts(email)` | Customer mentions several emails or accounts | Single verified account covers the issue |
 | Read | `get_customer(customer_id)` | Profile, region, sign-in method | Data already in case facts |
 | Read | `get_subscription(customer_id)` | Source, plan, status, renewal date, cancellation time | Data already in case facts |
-| Read | `get_payments(customer_id, date_from, date_to, amount?)` | Charges, refunds, duplicates, unrecognized charges | No money question |
+| Read | `get_invoices(customer_id, date_from, date_to, amount?)` | Charges, refunds, duplicates, unrecognized charges | No money question |
 | Read | `get_usage(customer_id)` | Context for refund escalations and churn risk | As the deciding refund rule (REF-13) |
+| Write | `subscribe(customer_id, plan_id)` | BIL-60, customer explicitly asked, confirmed | Upselling, plan not returned by tools |
 | Write | `cancel_subscription(customer_id, reason)` | `web` source, confirmed | Store source |
-| Write | `change_plan(customer_id, plan_id)` | `web`, BIL-30 confirmed, customer confirmed | Option not confirmed by `get_policy` |
-| Write | `pause_subscription(customer_id, period)` | `web`, BIL-30 confirmed, customer confirmed | Option not confirmed by `get_policy` |
-| Write | `process_refund(payment_id, amount, rule_id)` | Rule from `04_refunds.md` matched, within REF-10, confirmed | Store source, outside policy, above limit |
-| Write | `request_data_deletion(customer_id)` | SEN-34 | Unsubscribe or cancellation only |
+| Write | `change_plan(customer_id, plan_id)` | `web`, BIL-30 confirmed, customer confirmed; also applies a pause (BIL-33) | Option not confirmed by `get_policy` |
+| Write | `process_refund(payment_id, amount, rule_id)` | Rule from `04_refunds.md` matched, within REF-10, confirmed | Store source, outside policy, above limit, 🔴 Red case |
 | Support | `resend_verification_email(customer_id)` | ACC-02 | Already resent once in this conversation |
 | Support | `create_bug_ticket(customer_id, details)` | ACC-22, ACC-32 | Before basic troubleshooting |
 | Knowledge | `get_policy(topic)` | A topic listed in TOOL-08 | Answer is covered by loaded policy |
@@ -27,16 +26,16 @@
 
 | ID | Rule |
 |---|---|
-| TOOL-07 | Tool classes and their requirements: |
+| TOOL-07 | Tool classes and their requirements. Shared tools are available to every sub-agent; the others only to the sub-agents listed in README, Sub-Agent Routing. Write tools are exactly the four listed below. |
 
 | Class | Tools | Verification (SEC-01) | Confirmation (ESC-01) | Modes |
 |---|---|---|---|---|
-| Identity | `verify_customer`, `find_accounts` | No | No | `customer`, `copilot` |
-| Read | `get_customer`, `get_subscription`, `get_payments`, `get_usage` | Yes in `customer` mode | No | All |
-| Write | `cancel_subscription`, `change_plan`, `pause_subscription`, `process_refund`, `request_data_deletion` | Yes | Yes | `customer` |
+| Identity | `verify_customer` (shared), `find_accounts` | No | No | `customer`, `copilot` |
+| Read | `get_customer`, `get_subscription`, `get_invoices` (all shared), `get_usage` | Yes in `customer` mode | No | All |
+| Write | `subscribe`, `cancel_subscription`, `change_plan`, `process_refund` | Yes | Yes | `customer` |
 | Support | `resend_verification_email`, `create_bug_ticket` | No, never reveal account data | No | `customer` |
-| Knowledge | `get_policy`, `search_help_center` | No | No | All |
-| Internal | `add_internal_note`, `flag_security`, `escalate_to_human` | No | No | `customer`, `copilot` |
+| Knowledge | `get_policy`, `search_help_center` (both shared) | No | No | All |
+| Internal | `escalate_to_human` (shared), `add_internal_note`, `flag_security` | No | No | `customer`, `copilot` |
 
 ## Policy Topics
 

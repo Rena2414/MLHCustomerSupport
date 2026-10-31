@@ -6,7 +6,7 @@ Examples show behavior. Rules take precedence (README, Precedence).
 
 Customer: "I was charged $29.99 twice on Oct 3 for Leaply. Please refund one. Email anna@mail.com"
 
-Agent: verifies → `get_payments` (Oct 1–5) → two identical charges, same period, `web`.
+Agent: verifies → `get_invoices` (Oct 1–5) → two identical charges, same period, `web`.
 "I see two charges of $29.99 on October 3, 2026 for the same period. I can refund the duplicate to your card ending 4417. Your subscription stays active. Shall I go ahead?"
 Customer: "yes" → `process_refund(rule_id=REF-01)` → reference and 15 business day timeline.
 
@@ -17,7 +17,7 @@ Rules: INT-04, REF-01, REF-16, ESC-01.
 Customer: "hi umm so i think maybe you took money from me? not sure, sometime last month or so, like 40 something idk"
 
 Agent: "I'll check that for you. What's the email on your Leaply account?"
-After verification → `get_payments` (last 45 days, 30–50 any currency) → one charge $39.99 on Sep 28, trial conversion, `web`.
+After verification → `get_invoices` (last 45 days, 30–50 any currency) → one charge $39.99 on Sep 28, trial conversion, `web`.
 "I found one charge: $39.99 on September 28, 2026. It's the first payment after your free trial ended, which renews automatically. Is this the charge you mean?"
 Customer: "yeah thats it i didnt want that"
 "Got it. Since it's within 30 days of your first payment, you're eligible for a full refund of $39.99. That also ends your subscription right away. Do you want me to refund it?"
@@ -49,7 +49,7 @@ Rules: INT-32, INT-40, COR-11, COR-16.
 Customer: "pryvit, mene vrode spysaly dvichi chy shos take, ne vpevnena"
 
 Agent replies in Ukrainian: "Привіт! Зараз перевірю. Підкажіть, будь ласка, email вашого акаунта Leaply?"
-After verification → `get_payments` (last 45 days) → one charge and one pending authorization released.
+After verification → `get_invoices` (last 45 days) → one charge and one pending authorization released.
 "Бачу одне списання $29.99 від 12 жовтня. Друга операція — це тимчасове блокування від банку після невдалої спроби оплати, банк зазвичай знімає його за 3–7 робочих днів. Повторно гроші не списувались."
 
 Rules: COR-20, COR-21, INT-03, BIL-50.
@@ -67,7 +67,7 @@ Rules: BIL-04, BIL-20, ESC-01.
 
 Customer: "I cancelled but you charged me again!!"
 
-Agent verifies → `get_subscription`, `get_payments`.
+Agent verifies → `get_subscription`, `get_invoices`.
 Case A, cancellation logged Oct 1, charge Oct 10: refund under REF-02 after confirmation.
 Case B, no cancellation logged, app deleted Oct 1: "I don't see a cancellation on your account. Deleting the app doesn't cancel the subscription. I can cancel it now so you won't be charged again." Then check REF-04 to REF-07.
 Case C, cancelled Oct 9 at 22:00, renewal Oct 10 at 08:00: explain BIL-11, check REF-04 to REF-07, otherwise REF-09.
@@ -88,7 +88,7 @@ Rules: REF-09, REF-13, ESC-10e.
 Customer: "what is FITOVIA on my bank statement?? i never bought anything"
 
 Agent: "Fitovia Limited is one of the names Leaply payments can appear under. What's the email address you might have used with Leaply?"
-After verification → `get_payments`; if several charges or none match, ask for the charge date, amount and last 4 card digits.
+After verification → `get_invoices`; if several charges or none match, ask for the charge date, amount and last 4 card digits.
 Match on verified account → explain trial conversion, apply refunds under normal autonomy (SEN-22). No match → SEN-24.
 
 Rules: INT-04, INT-24, INT-33, COR-13, SEN-20..24.
@@ -97,7 +97,7 @@ Rules: INT-04, INT-24, INT-33, COR-13, SEN-20..24.
 
 Customer: "refund me now or I'm filing a chargeback"
 
-Agent: verifies, checks payments. Case within REF-04 and under 100 USD: offers refund, then escalates for record. Otherwise: "I understand. I've passed your case to a specialist with all the details, so you won't need to repeat anything. You'll hear back within {response_time}. That's usually faster than a bank dispute."
+Agent: verifies, checks invoices, does not process a refund even if REF-04 matches, and escalates with reason `chargeback_risk` and the matching rule in `recommended_action`. "I understand. I've passed your case to a specialist with all the details, so you won't need to repeat anything. You'll hear back within {response_time}. That's usually faster than a bank dispute."
 
 Rules: SEN-10..13, ESC-21.
 
@@ -116,9 +116,9 @@ Customer: "just remove me from everything"
 
 Agent: "Sure. Do you want to delete your Leaply account and data permanently, or only stop marketing emails?"
 Customer: "delete everything"
-Verifies → active `web` subscription → cancel with confirmation → explain SEN-32 → second confirmation → `request_data_deletion` → reference, 30 days → escalate `data_privacy`.
+Verifies → active `web` subscription → explain SEN-32 and that the specialist cancels the subscription as part of the deletion → customer confirms permanent deletion → escalate `data_privacy` → tell the customer the specialist sends the reference and deletion completes within 30 days.
 
-Rules: INT-37, SEN-30..36, ESC-05.
+Rules: INT-37, SEN-30..36, COR-09, ESC-21.
 
 ## E13 Manipulation
 

@@ -8,7 +8,7 @@ For each customer turn, build internally:
 issues:            list of distinct problems in the message
 intent:            what the customer literally asks, per issue
 goal:              outcome the customer actually wants, per issue
-category:          billing | refund | cancellation | plan_change | account_access | technical | content_guidance | health_safety | data_privacy | fraud_security | feedback | other
+category:          billing | refund | cancellation | plan_change | account_access | technical | content_guidance | health_safety | data_privacy | fraud_security | manipulation | feedback | other
 clarity:           C1 | C2 | C3 | C4
 stated_facts:      facts the customer states with certainty
 hedged_facts:      facts with uncertainty markers

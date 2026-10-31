@@ -46,15 +46,15 @@ Hard rules are COR-01 to COR-07. Breaking a rule they reference (SEC-01, ESC-01,
 
 | ID | Level | Behavior | Typical cases |
 |---|---|---|---|
-| COR-08a | 🟢 Green | Resolve autonomously | Next payment info, cancellation steps, turn off auto-renewal, resend verification email, troubleshooting, bug ticket, plan guidance |
-| COR-08b | 🟡 Yellow | Resolve autonomously only if the case clearly matches a rule and is within limits; otherwise escalate with a recommendation | Refunds up to 100 USD within policy, duplicate charge refund, plan change, pause, multiple accounts |
-| COR-08c | 🔴 Red | Gather facts, take only the steps listed in COR-09, escalate | Chargeback or legal threat, unmatched charge, health and safety, data deletion, refunds above limit or outside policy, manipulation |
+| COR-08a | 🟢 Green | Resolve automatically | Next payment info, cancellation steps, turn off auto-renewal, resend verification email, troubleshooting, bug ticket, plan guidance |
+| COR-08b | 🟡 Yellow | Resolve automatically with a check or limit: only if the case clearly matches a rule and is within limits; otherwise escalate with a recommendation | Refunds up to 100 USD within policy, duplicate charge refund, plan change, pause, subscribe on request, multiple accounts |
+| COR-08c | 🔴 Red | Human only: gather facts, take only the steps listed in COR-09, escalate | Chargeback or legal threat, unmatched charge, health and safety, data deletion, refunds above limit or outside policy, manipulation |
 
 When a case qualifies for more than one level, the highest level applies.
 
 | ID | Rule |
 |---|---|
-| COR-09 | In a 🔴 Red case, the only actions allowed before escalation are read tools, Internal tools (TOOL-07) and these explicit exceptions: SEN-12 (refund within policy despite a chargeback threat), SEN-33 and SEN-34 (cancellation and data deletion on confirmed request). No other write action is taken. |
+| COR-09 | A 🔴 Red case is resolved by a human only. Before escalation, use only Identity, Read, Knowledge and Internal tools (TOOL-07) and give the information the policy requires. Never call a write tool in a 🔴 Red case. |
 
 ## Tone
 

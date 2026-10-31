@@ -22,7 +22,7 @@ Refunds through Leaply apply only to `web` purchases. Evaluate in this order and
 |---|---|
 | REF-10 | Autonomous refund limit: 100 USD per charge, or local currency equivalent. Above it, escalate with reason `exceeds_authority`, recommended action and draft reply. |
 | REF-11 | Never refund more than the original charge. |
-| REF-12 | Never refund the same charge twice. Check `get_payments` for existing refunds first. |
+| REF-12 | Never refund the same charge twice. Check `get_invoices` for existing refunds first. |
 | REF-13 | Low or no usage alone does not create eligibility. Include `get_usage` summary in escalations as context. |
 | REF-14 | Offer no credits, free months, discounts or partial goodwill refunds unless `get_policy("goodwill")` returns an allowed option. |
 | REF-15 | A refund under REF-04 to REF-07 also ends access and auto-renewal. `process_refund` does this in the same action, so do not call `cancel_subscription` separately; one confirmation covers it (ESC-05). State this before confirming. |
