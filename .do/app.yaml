@@ -23,6 +23,9 @@ services:
       - path: /api
         preserve_path_prefix: true
     envs:
+      - key: AgentService__BaseUrl
+        scope: RUN_TIME
+        value: http://agents:8080
       - key: ConnectionStrings__Default
         scope: RUN_TIME
         value: Host=${db.HOSTNAME};Port=${db.PORT};Username=${db.USERNAME};Password=${db.PASSWORD};Database=${db.DATABASE};SSL Mode=Require;Trust Server Certificate=true
@@ -49,6 +52,9 @@ services:
       - key: GEMINI_API_KEY
         scope: RUN_TIME
         type: SECRET
+      - key: GEMINI_MODEL
+        scope: RUN_TIME
+        value: gemma-4-26b-a4b-it
 
 static_sites:
   - name: frontend

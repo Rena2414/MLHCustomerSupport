@@ -1,11 +1,12 @@
 import { DatePipe } from '@angular/common';
 import { Component, ElementRef, effect, inject, viewChild } from '@angular/core';
 import { ChatStore } from '../../../core/chat/chat.store';
+import { MarkdownPipe } from '../../../core/markdown.pipe';
 import { MessageComposerComponent } from '../message-composer/message-composer.component';
 
 @Component({
   selector: 'app-chat-window',
-  imports: [DatePipe, MessageComposerComponent],
+  imports: [DatePipe, MarkdownPipe, MessageComposerComponent],
   templateUrl: './chat-window.component.html',
   styleUrl: './chat-window.component.css'
 })

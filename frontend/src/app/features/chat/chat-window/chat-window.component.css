@@ -59,4 +59,6 @@
 }
 
 .bubble time { display: block; text-align: right; font-size: 0.72rem; opacity: 0.65; }
+.plain { white-space: pre-wrap; }
 .typing { color: var(--muted); font-style: italic; }
+.error { align-self: center; padding: 0.4rem 0.9rem; border-radius: 999px; background: var(--danger-bg); color: var(--danger); font-size: 0.9rem; }

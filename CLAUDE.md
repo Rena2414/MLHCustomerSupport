@@ -4,7 +4,7 @@ Mock wellness and health app with a minimal admin web UI and an AI customer-supp
 
 Rules: see `.claude/rules/code-style.md` (no code comments, English only).
 
-System overview (capabilities, flows, API, data model, status): see `docs/SYSTEM.md`. Agent behavior policy: see `policy/README.md`.
+Developer architecture (capabilities, flows, API, data model, status): see `docs/ARCHITECTURE.md`. Customer-facing help guide read by the agent (XML questions and answers about the Leaply app): `docs/SYSTEM.md`. Agent behavior policy: see `policy/README.md`.
 
 ## Repository layout
 
@@ -27,7 +27,7 @@ deploy/     deployment assets (later)
 - Entities never leave Application; controllers return DTOs only.
 - Python agents never access the database. They call the .NET API, which owns business rules and the authoritative enforcement layer.
 - Frontend talks only to the .NET API. Chat flow: Angular -> .NET `/api/chat` -> Python agent service -> tools -> .NET API.
-- Planned persistence: PostgreSQL via EF Core (Npgsql) plus ASP.NET Identity for staff users (roles Admin, SupportAgent). Currently an in-memory repository is used.
+- Persistence: PostgreSQL via EF Core (Npgsql) for customers, conversations and chat messages. ASP.NET Identity for staff users (roles Admin, SupportAgent) is still planned. The agent service keeps its own conversation history in memory.
 
 ## Product scope
 
@@ -67,12 +67,14 @@ cd frontend && npm install && npm start                  # http://localhost:4200
 cd agents && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && uvicorn app.main:app --reload --port 8000
 ```
 
-Configuration: `agents/.env` (copy from `.env.example`) holds `GEMINI_API_KEY` and `BACKEND_API_URL`. Never commit secrets.
+Local database: PostgreSQL 16 on `localhost:5432` (for example `brew install postgresql@16 && brew services start postgresql@16`). The password lives only in the git-ignored `backend/src/MlhSupport.Api/secrets.json`: copy `secrets.example.json` to `secrets.json`, replace `<choose-a-password>` with your own password, then run `./scripts/setup-local-db.sh`, which creates the role and database from that file. In Development the API applies EF migrations and seeds three customers on startup. New migration: `cd backend && dotnet tool restore && dotnet ef migrations add <Name> --project src/MlhSupport.Infrastructure --startup-project src/MlhSupport.Api --output-dir Persistence/Migrations`.
+
+Configuration: `agents/.env` (copy from `.env.example`) holds `GEMINI_API_KEY` and `GEMINI_MODEL`. The key is never committed or printed: locally it lives only in the git-ignored `agents/.env`, in GitHub it is the Actions secret `GEMINI_API_KEY` (model id in the Actions variable `GEMINI_MODEL`). `agents/tests/test_no_secrets_committed.py` fails if a key appears in repository files.
 
 ## Build order
 
 1. Scaffolding (done): projects, references, runnable Angular and API.
-2. EF Core + Identity + PostgreSQL, seed data.
+2. EF Core + PostgreSQL, seed data (done). Identity still to do.
 3. Python loop, Gemini ModelClient, read-only tools, policy.
 4. Write tools behind gates; audit; escalation and handoff.
 5. Subagents, chat UI, handoff queue.
