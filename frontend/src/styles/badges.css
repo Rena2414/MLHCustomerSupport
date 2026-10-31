@@ -1,0 +1,12 @@
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.badge.active { color: var(--success); background: var(--success-bg); }
+.badge.trial { color: var(--warning); background: var(--warning-bg); }
+.badge.cancelled { color: var(--danger); background: var(--danger-bg); }
+.badge.paused, .badge.none { color: var(--muted); background: var(--surface-alt); }

@@ -1,0 +1,20 @@
+:root {
+  --primary: #2a7f62;
+  --primary-hover: #226b52;
+  --primary-soft: #e6f4ee;
+  --primary-border: #bfe0d1;
+  --primary-dark: #1d5a45;
+  --text: #1f2a26;
+  --muted: #5f6f68;
+  --border: #dbe5e0;
+  --surface: #ffffff;
+  --surface-alt: #f6faf8;
+  --success: #1b7f4b;
+  --success-bg: #e3f4ea;
+  --warning: #8a5a00;
+  --warning-bg: #fdf1d6;
+  --danger: #a32222;
+  --danger-bg: #fbe5e5;
+  --radius: 8px;
+  --topbar-height: 64px;
+}

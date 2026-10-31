@@ -1,0 +1,30 @@
+button, .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button:hover, .button:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.button.secondary { background: #ffffff; color: var(--primary); }
+.button.secondary:hover { background: var(--primary-soft); }
+
+.icon-button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.icon-button svg { width: 20px; height: 20px; fill: currentColor; }

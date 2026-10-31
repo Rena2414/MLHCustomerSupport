@@ -1,0 +1,62 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 64px;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.title { font-weight: 700; color: var(--primary-dark); }
+.subtitle { font-size: 0.85rem; color: var(--success); }
+
+.messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  overflow-y: auto;
+  background: var(--surface-alt);
+}
+
+.row { display: flex; }
+.row.mine { justify-content: flex-end; }
+
+.bubble {
+  max-width: 78%;
+  padding: 0.5rem 0.8rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 14px 14px 14px 4px;
+  background: #ffffff;
+  overflow-wrap: anywhere;
+}
+
+.row.mine .bubble {
+  border-radius: 14px 14px 4px 14px;
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.bubble time { display: block; text-align: right; font-size: 0.72rem; opacity: 0.65; }
+.typing { color: var(--muted); font-style: italic; }
