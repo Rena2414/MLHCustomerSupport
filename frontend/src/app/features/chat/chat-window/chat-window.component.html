@@ -10,15 +10,22 @@
   @for (m of store.messages(); track m.id) {
     <div class="row" [class.mine]="m.author === 'customer'">
       <div class="bubble">
-        <span>{{ m.text }}</span>
+        @if (m.author === 'agent') {
+          <div class="markdown" [innerHTML]="m.text | markdown"></div>
+        } @else {
+          <span class="plain">{{ m.text }}</span>
+        }
         <time>{{ m.createdAt | date: 'shortTime' }}</time>
       </div>
     </div>
   }
-  @if (store.waitingForReply()) {
+  @if (store.activeConversationWaiting()) {
     <div class="row">
       <div class="bubble typing">typing...</div>
     </div>
+  }
+  @if (store.sendError(); as error) {
+    <div class="error">{{ error }}</div>
   }
 </div>
 

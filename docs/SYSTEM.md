@@ -1,348 +1,318 @@
-# System Overview
-
-Status: MVP in development
-Last updated: 2026-10-31
-Audience: developers and coding agents working in this repository
-
-This document describes what the system does, how its parts fit together, how requests flow, and how to run and use it. `CLAUDE.md` holds the binding engineering rules; `policy/` holds the binding agent behavior rules. If this document conflicts with either, they win and this document must be updated.
-
-## 1. Purpose
-
-An AI support operations assistant for Leaply, a wellness and habit-building app. The AI does not only answer: it understands the customer's real goal, executes allowed actions through tools, escalates to humans with a ready-to-use handoff, assists human agents, and reviews conversation quality.
-
-Hackathon mapping:
-
-| Challenge requirement | System capability |
-|---|---|
-| Understand the request and the real goal | Intent analysis, clarity levels C1 to C4, hedged-fact handling (`policy/01_intent_understanding.md`) |
-| Propose or initiate actions | Tool-using agent loop with autonomy tiers and code-enforced gates |
-| Help support agents decide | Copilot mode and structured handoff with recommended action and draft reply |
-| Analyze interactions and evaluate support | QA mode scoring, churn risk, root cause (`policy/09_copilot_and_qa.md`) |
-
-## 2. Capabilities
-
-| Capability | Actor | Status |
-|---|---|---|
-| Client table and client details in admin UI | Support staff | Implemented (in-memory seed data) |
-| Customer support chat with orchestrator and sub-agents | Customer | Planned |
-| Autonomous resolution of 🟢 and 🟡 cases | Agent | Planned |
-| Escalation queue with structured handoffs | Support staff | Planned |
-| Copilot recommendations on tickets | Support staff | Planned |
-| Conversation quality review | Support lead | Planned |
-| Audit log of write actions and security flags | System | Planned |
-| Staff authentication (Admin, SupportAgent) | Support staff | Planned |
-
-## 3. Architecture
-
-```mermaid
-flowchart LR
-    UI[Angular admin UI<br/>:4200] -->|HTTP JSON| API[.NET API<br/>:5162]
-    API -->|POST /chat| AG[Python agent service<br/>:8000]
-    AG -->|tool calls over HTTP| API
-    AG -->|generate| LLM[Gemini API]
-    API --> DB[(PostgreSQL<br/>planned; in-memory now)]
-```
-
-| Component | Path | Tech | Responsibility | Must not |
-|---|---|---|---|---|
-| Frontend | `frontend/` | Angular 20, standalone components | Admin UI: clients, chat, handoff queue | Call the agent service or the database directly |
-| Backend API | `backend/` | .NET 8, Clean Architecture | Business data, business rules, authoritative enforcement (gates, limits, audit), chat entry point | Contain LLM prompts or agent reasoning |
-| Agent service | `agents/` | Python, FastAPI, `google-genai` | Agent loop, orchestrator and sub-agents, policy loading, tool adapters | Access the database; bypass the API |
-| Policy | `policy/` | Markdown | Agent behavior rules with stable IDs | Contain code or secrets |
-
-Backend layers and allowed references:
-
-```
-Api -> Infrastructure -> Application -> Domain
-Api -> Application
-```
-
-| Layer | Contains | Never references |
-|---|---|---|
-| `MlhSupport.Domain` | Entities, enums, domain rules | Anything else |
-| `MlhSupport.Application` | Use cases, DTOs, repository abstractions | EF Core, Identity, ASP.NET |
-| `MlhSupport.Infrastructure` | Repositories, EF Core, Identity | Api |
-| `MlhSupport.Api` | Controllers, DI composition, CORS, Swagger | Domain entities in responses |
-
-## 4. Repository Map
-
-```
-CLAUDE.md                       engineering rules for agents and developers
-.claude/rules/code-style.md     no code comments, English only
-.claude/launch.json             run configurations: api, frontend
-docs/SYSTEM.md                  this document
-policy/                         agent behavior policy, see policy/README.md
-backend/MlhSupport.sln
-backend/src/MlhSupport.Domain/Entities/Customer.cs
-backend/src/MlhSupport.Domain/Enums/SubscriptionStatus.cs
-backend/src/MlhSupport.Application/Customers/CustomerService.cs
-backend/src/MlhSupport.Application/Customers/CustomerDto.cs
-backend/src/MlhSupport.Application/Abstractions/ICustomerRepository.cs
-backend/src/MlhSupport.Infrastructure/Persistence/InMemoryCustomerRepository.cs
-backend/src/MlhSupport.Api/Controllers/CustomersController.cs
-backend/tests/MlhSupport.Application.Tests/
-agents/app/main.py              FastAPI app, /health
-agents/app/agents/              orchestrator and sub-agents
-agents/app/api/                 HTTP endpoints of the agent service
-agents/app/core/                agent loop, ModelClient, settings, case facts
-agents/app/policy/              policy loader and prompt assembly
-agents/app/tools/               tool definitions and backend adapters
-agents/tests/
-frontend/src/app/core/          API models and services
-frontend/src/app/features/      clients, chat
-```
-
-## 5. Agent Design
-
-### 5.1 Modes
-
-| Mode | Counterpart | Allowed tool classes | Output |
-|---|---|---|---|
-| `customer` | Customer | All; Write within autonomy tier | Chat replies |
-| `copilot` | Human agent | Identity, Read, Knowledge, Internal | Structured recommendation (COP rules) |
-| `qa` | Support lead | Read, Knowledge | Structured review (QA rules) |
-
-The mode is set by the API per request. A message cannot change it.
-
-### 5.2 Orchestrator and Sub-Agents
-
-```mermaid
-flowchart TD
-    M[Customer message] --> O[Orchestrator<br/>intent, clarity, priority, risk,<br/>verification, case facts]
-    O -->|billing, cancellation, plan_change| SB[Subscription and Billing]
-    O -->|refund, fraud_security| PR[Payments and Refunds]
-    O -->|account_access, technical| AT[Account and Tech]
-    O -->|content_guidance, health_safety,<br/>data_privacy, manipulation, feedback| PS[Plan and Safety]
-    O -->|other| O
-    SB & PR & AT & PS --> T[Tools through gates]
-    T --> API[.NET API]
-    SB & PR & AT & PS --> R[Result to orchestrator]
-    R --> F[Final reply or escalation]
-```
-
-Routing, per-agent tools and policy files are defined in `policy/README.md`, section Sub-Agent Routing. The orchestrator owns verification, case facts and the final handoff. Several issues in one message stay in one loop with shared case facts.
-
-### 5.3 Autonomy Tiers
-
-| Tier | Behavior | Examples |
-|---|---|---|
-| 🟢 GREEN | Automatic | Next payment info, cancellation steps, turn off auto-renewal, resend verification email, troubleshooting, bug ticket |
-| 🟡 YELLOW | Automatic with check or limit | Refund within policy up to 100 USD, duplicate charge, plan change, pause, multiple accounts |
-| 🔴 RED | Human only; agent gathers facts and escalates | Chargeback or legal threat, unmatched charge, health and safety, data deletion, refunds beyond policy, manipulation |
-
-### 5.4 Agent Loop
-
-```mermaid
-sequenceDiagram
-    participant API as .NET API
-    participant L as Agent loop
-    participant M as Gemini
-    participant G as Gates
-    participant B as Backend tools API
-    API->>L: message, conversation_id, mode, case facts
-    loop until model returns no tool calls
-        L->>M: system prompt + policy + case facts + history
-        M-->>L: tool calls or final text
-        L->>G: validate each tool call
-        alt allowed
-            G->>B: execute
-            B-->>L: result or structured error
-        else blocked
-            G-->>L: structured error
-        end
-        L->>L: update case facts
-    end
-    L-->>API: reply, case facts, actions, escalation
-```
-
-| Rule | Detail |
-|---|---|
-| Exit | The loop ends when the model returns a final answer with no tool calls. The iteration cap is a safety net only. |
-| Model access | Behind a `ModelClient` interface; Gemini implementation via `google-genai`. |
-| Case facts | Stored outside chat history, re-injected every turn, updated after every tool call. |
-| Tool output | Trimmed to fields relevant to the issue before being added to context. |
-| Errors | Every tool returns `{category, retryable, message}` on failure. Categories are listed in `policy/07_tools_and_errors.md`. |
-
-### 5.5 Enforcement in Code
-
-Prompt rules are probabilistic. These are enforced by the .NET API and mirrored in the agent gates:
-
-| Gate | Rule | Behavior when violated |
-|---|---|---|
-| Verification | SEC-01 | Write and account Read tools return `verification_required` |
-| Confirmation | ESC-01 | Write tools without a confirmation token from the latest customer turn return `confirmation_required` |
-| Refund cap | REF-10 | `process_refund` above 100 USD returns `limit_exceeded` |
-| Red tier | COR-09 | Write tools in a case marked 🔴 return `policy_blocked` |
-| Mode | TOOL-07 | Tools outside the mode's classes return `permission_denied` |
-| Idempotency | TOOL-05 | Repeated write with the same idempotency key is rejected |
-| Audit | SEC-12 | Every write and `flag_security` call is logged with conversation, tool, arguments, result, rule ID |
-
-### 5.6 Tools
-
-| Class | Tools |
-|---|---|
-| Identity | `verify_customer`, `find_accounts` |
-| Read | `get_customer`, `get_subscription`, `get_invoices`, `get_usage` |
-| Write | `subscribe`, `cancel_subscription`, `change_plan`, `process_refund` |
-| Support | `resend_verification_email`, `create_bug_ticket` |
-| Knowledge | `get_policy`, `search_help_center` |
-| Internal | `escalate_to_human`, `add_internal_note`, `flag_security` |
-
-Signatures, usage conditions and error handling: `policy/07_tools_and_errors.md`.
-
-## 6. End-to-End Flows
-
-### 6.1 Customer Chat
-
-1. Customer sends a message in the chat UI.
-2. Angular calls `POST /api/conversations/{id}/messages` on the .NET API.
-3. The API loads conversation state and case facts, sets `mode=customer`, and forwards to the agent service.
-4. The orchestrator analyzes intent, clarity, priority and risk, verifies the customer when needed, and routes each issue to a sub-agent.
-5. Sub-agents call tools; the API enforces gates and writes audit entries.
-6. Before any write, the agent summarizes the action and asks for explicit confirmation; the next customer turn carries the confirmation.
-7. The agent returns a reply, updated case facts, executed actions and an optional handoff.
-8. The API stores the turn and, on escalation, creates a handoff in the queue.
-
-### 6.2 Vague Request
-
-1. Clarity is C2 or C3 (`policy/01_intent_understanding.md`).
-2. Hedged facts become search ranges (INT-20 to INT-27).
-3. After verification, the agent looks up data first and asks the customer to confirm what it found.
-4. At most one question per message and two clarification rounds per issue; then the agent proposes options or escalates.
-
-### 6.3 Escalation
-
-1. Trigger: customer asks for a human, 🔴 tier, policy gap, no progress, or authority exceeded (ESC-10).
-2. The agent resolves what it can, then calls `escalate_to_human` with the handoff schema from `policy/08_confirmation_escalation_state.md`.
-3. The handoff contains customer, verified flag, priority, issues, facts, steps taken, rule IDs, recommended action and draft reply.
-4. The customer is told a specialist has the case and the response time from `get_policy("response_time")`.
-5. Staff pick it up in the handoff queue, optionally run copilot mode, and act.
-
-### 6.4 Copilot
-
-1. A support agent opens a ticket and requests a recommendation.
-2. The API calls the agent service with `mode=copilot`.
-3. The agent returns summary, interpretations, recommended action with rule IDs, risks, missing info and a draft reply. It never executes Write or Support tools.
-
-### 6.5 Quality Review
-
-1. A support lead selects a closed conversation.
-2. The API calls the agent service with `mode=qa`, transcript, tool log and case facts.
-3. The agent returns scores QA-01 to QA-07, policy violations, churn risk, root cause and one improvement suggestion.
-
-## 7. API
-
-### 7.1 Implemented
-
-| Method | Path | Service | Response |
-|---|---|---|---|
-| GET | `/api/customers` | .NET | `CustomerListItemDto[]`: `id, fullName, email, plan, subscriptionStatus` |
-| GET | `/api/customers/{id}` | .NET | `CustomerDetailsDto`: adds `nextPaymentDate, nextPaymentAmount, createdAt`; 404 if missing |
-| GET | `/health` | Python | `{"status": "ok"}` |
-
-### 7.2 Planned
-
-Target contracts. The conversation endpoints match the `ChatApi` contract on branch `il-basic-front-app` (`frontend/src/app/core/chat/`); they implement the chat entry point described as `/api/chat` in `CLAUDE.md`. Once implemented, the code and Swagger become the source of truth and this table must be updated.
-
-| Method | Path | Service | Purpose |
-|---|---|---|---|
-| GET | `/api/conversations` | .NET | Conversation list: `Conversation[]` (`id, title, lastMessage, updatedAt`) |
-| POST | `/api/conversations` | .NET | Create a conversation: `{}` → `Conversation` |
-| GET | `/api/conversations/{id}/messages` | .NET | Messages: `ChatMessage[]` (`id, author: customer \| agent, text, createdAt`) |
-| POST | `/api/conversations/{id}/messages` | .NET | Customer chat turn: `{text}` → agent `ChatMessage` |
-| POST | `/chat` | Python | Agent turn: `{conversation_id, mode, message, history, case_facts}` → `{reply, case_facts, actions, handoff?}` |
-| GET | `/api/handoffs` | .NET | Escalation queue |
-| POST | `/api/handoffs/{id}/copilot` | .NET | Copilot recommendation for a ticket |
-| POST | `/api/conversations/{id}/review` | .NET | QA review of a closed conversation |
-| GET | `/api/audit` | .NET | Audit log |
-| * | `/api/tools/*` | .NET | One endpoint per tool in section 5.6, called only by the agent service |
-
-## 8. Data Model
-
-Implemented:
-
-| Entity | Fields |
-|---|---|
-| `Customer` | `Id`, `FullName`, `Email`, `Plan`, `SubscriptionStatus` (`None`, `Trial`, `Active`, `Cancelled`, `Paused`), `NextPaymentDate`, `NextPaymentAmount`, `CreatedAt` |
-
-Required by the policy and not yet modeled:
-
-| Entity or field | Needed for |
-|---|---|
-| `Subscription.Source` (`web`, `app_store`, `google_play`) | BIL-01 to BIL-05, REF-30, REF-31 |
-| `Subscription.CancelledAt`, `RenewalAt`, `TrialEndsAt` | BIL-11, REF-02, REF-05 |
-| `Invoice` (date, amount, currency, status, card last 4, refunded amount) | REF-01 to REF-12, SEN-20 to SEN-24, BIL-50 to BIL-53 |
-| `Customer.Region`, `SignInMethod` | REF-06 to REF-08, ACC-01, ACC-03 |
-| `UsageSummary` | REF-13, churn risk |
-| `Conversation`, `Message`, `CaseFacts` | Agent loop state |
-| `Handoff` | Escalation queue |
-| `AuditEntry` | SEC-12 |
-| `SecurityFlag` | SEC-22, SEN-23, SEN-24 |
-
-Seed data should cover every scenario in `policy/10_examples.md`.
-
-## 9. Running Locally
-
-Prerequisites: .NET 8 SDK, Node.js 20+, Python 3.12, a Gemini API key.
-
-| Service | Command | URL |
-|---|---|---|
-| Backend | `cd backend && dotnet run --project src/MlhSupport.Api` | http://localhost:5162, Swagger at `/swagger` |
-| Frontend | `cd frontend && npm install && npm start` | http://localhost:4200 |
-| Agents | `cd agents && python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt && uvicorn app.main:app --reload --port 8000` | http://localhost:8000 |
-
-On macOS or Linux use `source .venv/bin/activate`.
-
-Configuration:
-
-| File | Key | Purpose |
-|---|---|---|
-| `agents/.env` (copy of `.env.example`) | `GEMINI_API_KEY` | Model access |
-| `agents/.env` | `BACKEND_API_URL` | Default `http://localhost:5162/api` |
-| `frontend/src/environments/environment.ts` | `apiUrl` | Default `http://localhost:5162/api` |
-| `backend/src/MlhSupport.Api/Program.cs` | CORS origin | `http://localhost:4200` |
-
-Never commit `.env`, keys or `appsettings.Local.json`.
-
-## 10. Using the System
-
-| Screen | Route | What you can do | Status |
-|---|---|---|---|
-| Clients | `/clients` | See all customers with plan and subscription status | Implemented |
-| Client details | `/clients/:id` | See all stored data for a customer | Implemented |
-| Support chat | `/chat` | Talk to the support agent as a customer | Placeholder; chat UI with a mock API on branch `il-basic-front-app` |
-| Handoff queue | planned | Review escalations, run copilot, act | Planned |
-| Quality review | planned | Score conversations, see violations and churn risk | Planned |
-
-Demo scenarios: use the use cases in `policy/10_examples.md`, at least one per tier (🟢, 🟡, 🔴), one vague message, and one prompt-injection attempt.
-
-## 11. Testing
-
-| Level | Location | Covers |
-|---|---|---|
-| Backend unit | `backend/tests/MlhSupport.Application.Tests` | Use cases, gates, refund rules |
-| Agent unit | `agents/tests` | Gates, case facts, tool adapters, policy loading, with a fake `ModelClient` |
-| Scenario | `agents/tests` | Every example in `policy/10_examples.md`: expected tool calls, blocked actions, escalation reason |
-
-A scenario test passes when the expected rule IDs are applied, no hard rule is broken, and the gates block every forbidden write.
-
-## 12. Working Rules for Agents
-
-1. Read `CLAUDE.md` and `.claude/rules/code-style.md` before changing code. No code comments, English only.
-2. Respect the dependency rules in section 3; never add a reference against them.
-3. Business rules and enforcement live in the .NET API. The Python service never accesses the database.
-4. Agent behavior changes go into `policy/` with a rule ID, not into code or ad-hoc prompts. Update `policy/README.md` version when policy changes.
-5. Any new tool must be added in `policy/07_tools_and_errors.md`, the sub-agent routing table in `policy/README.md`, the API, and section 5.6 of this document.
-6. Every new behavior needs a scenario test.
-7. Update the Status columns in this document when a planned item is implemented.
-8. Build order and progress: `CLAUDE.md`, Build order.
-
-## 13. Known Gaps
-
-| Gap | Impact |
-|---|---|
-| Seed plans (`Yoga Monthly`, `Wellness Annual`, `Meditation Monthly`) do not match Leaply programs | Demo realism |
-| No purchase source, invoices or region in the data model | Billing and refund rules cannot run |
-| Chat, agent loop, tools and gates not implemented | Core capability missing |
-| No authentication on API | Staff endpoints are open |
-| Policy values marked as assumptions: 100 USD refund limit, 30-day deletion, 3 to 7 day pending release | Must be confirmed before production |
+<?xml version="1.0" encoding="UTF-8"?>
+<leaply_help_guide>
+
+  <about>
+    <product>Leaply</product>
+    <summary>
+      Leaply is a wellness and habit-building app. Every day it gives you a short guided practice,
+      from 3 to 15 minutes, in breathing, movement, self-massage, nutrition, sleep and mindfulness.
+    </summary>
+    <available_on>The website theleaply.com, iPhone and iPad (App Store), and Android phones (Google Play).</available_on>
+    <support_contact>support@example.com</support_contact>
+  </about>
+
+  <topic id="getting-started" title="Getting started">
+
+    <qa id="what-is-leaply">
+      <question>What is Leaply and what is it used for?</question>
+      <answer>
+        Leaply helps you build small, healthy daily habits. You do one short guided practice a day,
+        and each one takes only 3 to 15 minutes. The practices cover breathing, gentle movement,
+        self-massage, nutrition, sleep and mindfulness. It is meant for adults (18 and older).
+      </answer>
+    </qa>
+
+    <qa id="programs">
+      <question>Which programs does Leaply have?</question>
+      <answer>
+        There are three programs: Lymphatic Reset, Vagus Nerve Reset, and Brain Activation for Kids.
+        The kids program is used by a parent together with the child. Accounts are always for adults.
+      </answer>
+    </qa>
+
+    <qa id="personal-plan">
+      <question>How does my personal plan work? Where do I start?</question>
+      <answer>
+        When you join, Leaply asks you a few questions in a short quiz and builds a personal plan from
+        your answers. If you are not sure where to start, begin with the shortest daily practice in your plan.
+        If the plan does not feel right for you, you can retake the quiz with new answers or choose a different program.
+      </answer>
+    </qa>
+
+    <qa id="medical-advice">
+      <question>Is Leaply medical advice? Is it safe for me?</question>
+      <answer>
+        No. Leaply is for education and general wellbeing and does not replace a doctor. If you have a health
+        condition, are pregnant, take medication, or are unsure whether a practice is right for you, please ask
+        a doctor or another qualified health professional first.
+      </answer>
+    </qa>
+
+    <qa id="feel-unwell">
+      <question>A practice hurts or makes me dizzy. What should I do?</question>
+      <answer>
+        Please stop the practice right away and talk to a doctor or another qualified health professional.
+        I cannot give medical advice. If you have strong symptoms such as chest pain, fainting or trouble breathing,
+        contact your local emergency services now. I will also pass a note to our team so they can follow up with you.
+      </answer>
+    </qa>
+
+  </topic>
+
+  <topic id="subscription-basics" title="Your subscription">
+
+    <qa id="how-to-subscribe">
+      <question>How do I get a subscription?</question>
+      <answer>
+        <p>You can start a subscription in one of three places: on the website theleaply.com, in the iPhone app
+        (billed by Apple), or in the Android app (billed by Google).</p>
+        <steps>
+          <step>Open Leaply on the website or in the app and finish the short quiz about your goals.</step>
+          <step>Look at the plans on offer. The plan, the price and the billing period are shown before you pay.</step>
+          <step>Choose the plan you like and complete the payment.</step>
+        </steps>
+        <p>Good to know: where you subscribe decides where you cancel later, so remember which one you used.
+        Prices differ by country, plan and special offers, so I cannot quote a price from memory. The exact amount
+        is always shown on the payment screen.</p>
+      </answer>
+    </qa>
+
+    <qa id="renewal">
+      <question>Does my subscription renew by itself?</question>
+      <answer>
+        Yes. Every subscription renews automatically until you cancel it. To avoid the next payment, cancel at least
+        24 hours before the renewal time. Deleting the app or logging out does not cancel anything.
+      </answer>
+    </qa>
+
+    <qa id="free-trial">
+      <question>What happens when my free trial ends?</question>
+      <answer>
+        A free trial turns into a paid subscription when it ends, unless you cancel before that. Deleting the app or
+        logging out does not stop it. If you do not want to be charged, cancel before the trial ends.
+      </answer>
+    </qa>
+
+    <qa id="where-subscribed">
+      <question>How do I find out where I subscribed (website, Apple or Google)?</question>
+      <answer>
+        If you paid on theleaply.com, the subscription is managed by Leaply, and you will not see it in Apple or Google
+        settings. If you paid in the iPhone app, it is under Subscriptions in your Apple settings. If you paid in the
+        Android app, it is under Subscriptions in Google Play. If you cannot find it in Apple or Google settings,
+        it was almost certainly bought on the website. Your bank statement can also help: the payment shows as
+        Fitovia Limited or Waywell Corp.
+      </answer>
+    </qa>
+
+    <qa id="next-payment">
+      <question>When is my next payment and how much will it be?</question>
+      <answer>
+        The renewal date and amount are shown in your subscription details: on the website go to Profile, Settings,
+        Manage Subscription. For subscriptions bought through Apple or Google, they are shown in the store's
+        subscription settings. Remember that it renews automatically unless you cancel at least 24 hours before.
+      </answer>
+    </qa>
+
+    <qa id="change-or-pause">
+      <question>Can I pause my plan or switch to a cheaper one?</question>
+      <answer>
+        Pausing and changing plans are available only for subscriptions bought on the website, and only for some plans
+        and countries. If you bought through Apple or Google, plan changes are made in the store's subscription settings.
+        If you would like to pause or switch, write to support@example.com and the team will tell you what is
+        possible for your plan.
+      </answer>
+    </qa>
+
+  </topic>
+
+  <topic id="cancel" title="Cancelling">
+
+    <qa id="how-to-cancel">
+      <question>How do I cancel my subscription?</question>
+      <answer>
+        <p>It depends on where you subscribed. If you are not sure, see "How do I find out where I subscribed".</p>
+        <p>If you subscribed on the website:</p>
+        <steps>
+          <step>Sign in to your Leaply account.</step>
+          <step>Open Profile, then Settings.</step>
+          <step>Choose Manage Subscription.</step>
+          <step>Choose Cancel subscription and confirm.</step>
+        </steps>
+        <p>If you subscribed in the iPhone app (Apple):</p>
+        <steps>
+          <step>Open Settings on your iPhone and tap your name at the top.</step>
+          <step>Tap Subscriptions, then Leaply.</step>
+          <step>Tap Cancel Subscription.</step>
+        </steps>
+        <p>If you subscribed in the Android app (Google Play):</p>
+        <steps>
+          <step>Open the Play Store and tap your profile picture.</step>
+          <step>Tap Payments and subscriptions, then Subscriptions.</step>
+          <step>Choose Leaply and tap Cancel subscription.</step>
+        </steps>
+      </answer>
+    </qa>
+
+    <qa id="keep-access">
+      <question>If I cancel, do I lose access right away?</question>
+      <answer>
+        No. Cancelling switches off automatic renewal, and you keep full access until the end of the period you
+        already paid for. Your subscription details show the exact end date.
+      </answer>
+    </qa>
+
+    <qa id="cancel-too-late">
+      <question>I cancelled, but I was charged again. Why?</question>
+      <answer>
+        There are usually two reasons. The first is cancelling in the wrong place: a subscription bought on the website
+        must be cancelled on the website, and one bought through Apple or Google must be cancelled there. The second
+        is cancelling less than 24 hours before the renewal, which can be too late to stop that payment.
+        If you cancelled correctly more than 24 hours before the charge, you are entitled to a full refund,
+        so please write to support@example.com with the date you cancelled.
+      </answer>
+    </qa>
+
+  </topic>
+
+  <topic id="payments" title="Payments and refunds">
+
+    <qa id="charged-after-trial">
+      <question>I was charged after my free trial and did not know it would renew. What can I do?</question>
+      <answer>
+        I am sorry for the surprise. A trial becomes a paid subscription when it ends unless it is cancelled first.
+        If you bought on the website and it is within 30 days of that first charge, you can ask for a full refund
+        under the 30-day money-back guarantee. To stop further payments, cancel the subscription, as described
+        in "How do I cancel my subscription".
+      </answer>
+    </qa>
+
+    <qa id="refund">
+      <question>Can I get a refund?</question>
+      <answer>
+        <p>For subscriptions bought on the website, a full refund is possible if:</p>
+        <list>
+          <item>you were charged twice for the same period (the extra charge is refunded at any time);</item>
+          <item>you were charged after you had cancelled at least 24 hours before the charge;</item>
+          <item>the amount was wrong or the wrong plan was charged (the difference is refunded);</item>
+          <item>you ask within 30 days of your first purchase, and this includes the first charge after a free trial.</item>
+        </list>
+        <p>Customers in the EU and UK have 14 days to withdraw from a purchase, and some other countries have similar rights.
+        Using the app very little does not by itself qualify for a refund.</p>
+        <p>Subscriptions bought through Apple or Google are refunded by the store, not by Leaply. For Apple, go to
+        reportaproblem.apple.com, sign in and choose Request a refund. For Google, open your order history on
+        play.google.com and choose Report a problem.</p>
+        <p>Refunds go back to the original payment method and can take up to 15 business days, and your bank may need
+        a few more days to show them. Refund requests are handled by our support team at support@example.com.</p>
+      </answer>
+    </qa>
+
+    <qa id="charged-twice">
+      <question>I was charged twice this month. What happened?</question>
+      <answer>
+        Sometimes it is a real duplicate, and sometimes two different products or two accounts were charged.
+        If you were charged twice for the same plan and the same period, the extra charge is refunded in full.
+        Please send support@example.com the dates and amounts of both charges.
+      </answer>
+    </qa>
+
+    <qa id="unknown-charge">
+      <question>I do not recognize a charge on my bank statement.</question>
+      <answer>
+        Leaply payments appear on statements as Fitovia Limited or Waywell Corp. Check whether the date and amount match
+        a renewal or the end of a free trial. If nothing matches, contact your bank, and also write to
+        support@example.com with the date, the amount and the last 4 digits of your card so our team can look into it.
+      </answer>
+    </qa>
+
+    <qa id="declined-payment">
+      <question>My payment failed or my card was declined, but I still see a charge.</question>
+      <answer>
+        A declined payment can show up as a pending hold. Your bank usually releases it by itself within 3 to 7
+        business days. You do not need to pay again. If the charge is still there after that, write to
+        support@example.com.
+      </answer>
+    </qa>
+
+  </topic>
+
+  <topic id="account" title="Your account and the app">
+
+    <qa id="cannot-log-in">
+      <question>I cannot log in or I did not get the verification email.</question>
+      <answer>
+        First check how you signed up: with email, with Apple, or with Google. For email, look in your spam and
+        promotions folders and wait up to 10 minutes. If you used Sign in with Apple and chose Hide My Email, the
+        account email ends with privaterelay.appleid.com, and you should sign in with the same Apple ID. If the email
+        still does not arrive, write to support@example.com.
+      </answer>
+    </qa>
+
+    <qa id="two-emails">
+      <question>I signed up with two emails. Which one has my subscription?</question>
+      <answer>
+        Try signing in with each email and look at Manage Subscription in Settings. The account with the active
+        subscription shows the plan and the renewal date. For your privacy, our team will check this with you after
+        confirming that the accounts are yours, so write to support@example.com if you cannot tell. Merging two accounts
+        is not something you can do yourself.
+      </answer>
+    </qa>
+
+    <qa id="lost-progress">
+      <question>My progress disappeared after I changed phones.</question>
+      <answer>
+        This usually means you are signed in differently on the new phone, for example with Google instead of email,
+        or you created a new account by accident. Sign out and sign in again with the same method and email you used
+        before. If your progress is still missing, write to support@example.com with your old and new phone models
+        so the technical team can look into it.
+      </answer>
+    </qa>
+
+    <qa id="app-problems">
+      <question>The app crashes or the videos do not play.</question>
+      <answer>
+        <p>Please try these steps in order:</p>
+        <steps>
+          <step>Update Leaply to the latest version.</step>
+          <step>Restart your phone.</step>
+          <step>Switch between Wi-Fi and mobile data.</step>
+          <step>If it still fails, uninstall and install the app again.</step>
+        </steps>
+        <p>If the problem remains, write to support@example.com and tell us your phone model, your Android or iOS
+        version, the app version and what happens. A screenshot helps a lot.</p>
+      </answer>
+    </qa>
+
+    <qa id="delete-account">
+      <question>How do I delete my account and all my data?</question>
+      <answer>
+        Deleting is permanent: your progress is lost, and only the payment records that the law requires us to keep
+        are retained. Account deletion is done by our support team, so write to support@example.com from the email
+        of your account. The deletion is completed within 30 days. Deleting your account does not cancel a subscription
+        bought through Apple or Google, so cancel that in the store as well.
+      </answer>
+    </qa>
+
+  </topic>
+
+  <topic id="help" title="Getting help">
+
+    <qa id="talk-to-human">
+      <question>Can I talk to a person?</question>
+      <answer>
+        Yes. Write to support@example.com and the support team will help you. Please include the email of your
+        account and a short description, so you do not have to explain it twice.
+      </answer>
+    </qa>
+
+    <qa id="what-helper-can-do">
+      <question>What can this assistant do for me?</question>
+      <answer>
+        I can explain what Leaply is, guide you through the app step by step, and help you find where to subscribe,
+        cancel, or get help. For changes to your account, payments or refunds, our support team at
+        support@example.com does the work for you.
+      </answer>
+    </qa>
+
+  </topic>
+
+</leaply_help_guide>

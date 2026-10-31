@@ -231,3 +231,5 @@ backend/**/obj/
 *.suo
 node_modules/
 appsettings.Local.json
+
+secrets.json

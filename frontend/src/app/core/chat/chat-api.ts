@@ -5,5 +5,5 @@ export abstract class ChatApi {
   abstract getConversations(): Observable<Conversation[]>;
   abstract getMessages(conversationId: string): Observable<ChatMessage[]>;
   abstract createConversation(): Observable<Conversation>;
-  abstract sendMessage(conversationId: string, text: string): Observable<ChatMessage>;
+  abstract streamReply(conversationId: string, text: string): Observable<string>;
 }
