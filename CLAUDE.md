@@ -4,6 +4,8 @@ Mock wellness and health app with a minimal admin web UI and an AI customer-supp
 
 Rules: see `.claude/rules/code-style.md` (no code comments, English only).
 
+System overview (capabilities, flows, API, data model, status): see `docs/SYSTEM.md`. Agent behavior policy: see `policy/README.md`.
+
 ## Repository layout
 
 ```
