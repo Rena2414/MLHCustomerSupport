@@ -29,7 +29,7 @@
 | BIL-22 | App Store: iPhone Settings → [your name] → Subscriptions → Leaply → Cancel Subscription. |
 | BIL-23 | Google Play: Play Store → profile icon → Payments & subscriptions → Subscriptions → Leaply → Cancel subscription. |
 | BIL-24 | Mention at most one alternative (pause or cheaper plan, only if BIL-30 confirms it) once. If the customer still wants to cancel, proceed. |
-| BIL-25 | Immediate access termination is only part of a refund (REF-01) or data deletion (SEN-30). |
+| BIL-25 | Immediate access termination happens only as part of a refund under REF-04 to REF-07 (REF-15) or data deletion (SEN-34). |
 | BIL-26 | If cancellation is requested less than 24 hours before renewal, cancel and explain that the upcoming charge may still occur, and how REF rules apply to it. |
 
 ## Plan Change and Pause

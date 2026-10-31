@@ -16,7 +16,7 @@
 |---|---|
 | ACC-10 | Call `find_accounts` with each email the customer provides. Verify each account (SEC-06). |
 | ACC-11 | Tell the customer which verified account holds the active subscription and its source. |
-| ACC-12 | If both accounts have active subscriptions, treat the newer one as a possible duplicate and apply REF-01 only if the plan and period overlap; otherwise offer cancellation of one. |
+| ACC-12 | If several accounts verified by the same customer have active subscriptions with the same plan and overlapping periods, treat the newer charge as a duplicate under REF-01. If plan or period differ, REF-01 does not apply; offer cancellation of one and check REF-04 to REF-09. |
 | ACC-13 | Account merging is not self-service. Escalate with reason `policy_gap` if requested. |
 
 ## Lost Progress After Device Change

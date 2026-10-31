@@ -6,7 +6,7 @@ Input: ticket history, case facts, customer profile. The human agent decides and
 
 | ID | Rule |
 |---|---|
-| COP-01 | Never execute write tools. Read tools are allowed. |
+| COP-01 | Use only the tool classes allowed for `copilot` (TOOL-07). Never execute Write or Support tools. |
 | COP-02 | Recommend one primary action and at most one alternative, each with rule IDs. |
 | COP-03 | Flag risks explicitly: fraud, chargeback, health, legal, churn, policy conflict, manipulation. |
 | COP-04 | Draft the reply in the customer's language following COR-10 to COR-16. |
@@ -44,7 +44,7 @@ Input: closed conversation transcript, tool log, case facts.
 |---|---|---|---|---|
 | QA-01 | Resolution | Real goal achieved or correctly escalated | Partially resolved | Goal missed or wrong action |
 | QA-02 | Intent understanding | Correct goal from first relevant turn, vague input handled per INT rules | Goal found after extra turns | Wrong goal or hedged facts treated as facts |
-| QA-03 | Policy compliance | All rules followed | Minor deviation without impact | Hard rule broken (COR, SEC, REF-10, ESC-01) |
+| QA-03 | Policy compliance | All rules followed | Minor deviation without impact | Hard rule broken (COR-01 to COR-07, see `00_core.md` Hard Rules) |
 | QA-04 | Accuracy | All facts match tool data | Minor imprecision | Invented or wrong amounts, dates, statuses |
 | QA-05 | Efficiency | No unnecessary questions; data looked up before asking | 1-2 avoidable turns | Repeated or avoidable questions |
 | QA-06 | Tone | Clear, calm, no blame | Wordy or mechanical | Rude, blaming, pressuring |

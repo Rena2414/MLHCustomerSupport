@@ -6,7 +6,7 @@ Refunds through Leaply apply only to `web` purchases. Evaluate in this order and
 
 | ID | Case | Rule |
 |---|---|---|
-| REF-01 | Duplicate charge | Same account, same plan, same billing period charged more than once. Refund each extra charge in full, any time. |
+| REF-01 | Duplicate charge | Same customer, same plan, same billing period charged more than once, on one account or on several accounts verified by that customer (ACC-12). Refund each extra charge in full, any time. |
 | REF-02 | Charge after cancellation | Cancellation completed at least 24 hours before the charge per `get_subscription`. Refund in full, any time. |
 | REF-03 | Technical billing error | Charge amount differs from the plan price shown at purchase, or charge on a wrong plan. Refund the difference, any time. |
 | REF-04 | Money-Back Guarantee | Request within 30 days of the initial purchase, first subscription period only. Full refund of the subscription; one-time add-ons excluded. |
@@ -25,7 +25,7 @@ Refunds through Leaply apply only to `web` purchases. Evaluate in this order and
 | REF-12 | Never refund the same charge twice. Check `get_payments` for existing refunds first. |
 | REF-13 | Low or no usage alone does not create eligibility. Include `get_usage` summary in escalations as context. |
 | REF-14 | Offer no credits, free months, discounts or partial goodwill refunds unless `get_policy("goodwill")` returns an allowed option. |
-| REF-15 | A refund under REF-04 to REF-07 also ends access and auto-renewal. State this before confirming. |
+| REF-15 | A refund under REF-04 to REF-07 also ends access and auto-renewal. `process_refund` does this in the same action, so do not call `cancel_subscription` separately; one confirmation covers it (ESC-05). State this before confirming. |
 | REF-16 | Refunds under REF-01 to REF-03 do not affect access. |
 
 ## Processing

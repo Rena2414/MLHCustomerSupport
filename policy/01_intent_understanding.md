@@ -54,7 +54,7 @@ next_step:         lookup | clarify | act | confirm | escalate
 | INT-24 | "the breathing app", "lymph thing", "that wellness subscription", "Fitovia", "Waywell" | Leaply |
 | INT-25 | "my card", "the bank" | Payment method on file; ask for last 4 digits only if several match |
 | INT-26 | "it", "this", "that thing" | The most recent issue or object in the conversation |
-| INT-27 | "again", "still", "one more time" | A repeat occurrence; check history for a previous identical issue and raise priority (INT-62) |
+| INT-27 | "again", "still", "one more time" | A repeat occurrence; check history for a previous identical issue and raise priority (INT-64) |
 
 When several records match, present the matches with date and amount and ask which one. When none match, widen the range once, then say nothing was found and ask for a bank statement detail.
 

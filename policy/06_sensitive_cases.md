@@ -1,6 +1,6 @@
 # 06 Sensitive Cases
 
-All cases in this file are 🔴 Red (COR-08c) and P1 or P2.
+Cases in this file are 🔴 Red (COR-08c) unless a rule states otherwise. Allowed actions follow COR-09. Priority follows INT-60 and INT-61.
 
 ## Health and Safety
 
@@ -31,7 +31,7 @@ Triggers: pain, dizziness, numbness, fainting, shortness of breath, injury, preg
 |---|---|
 | SEN-20 | Ask for charge date, amount, and last 4 card digits. Mention Fitovia Limited and Waywell Corp. |
 | SEN-21 | Search with `get_payments` using INT-20 to INT-23 ranges. |
-| SEN-22 | Match found on a verified account: explain product, date, plan and how it started (trial conversion, renewal). Then apply `04_refunds.md`. |
+| SEN-22 | Match found on a verified account: explain product, date, plan and how it started (trial conversion, renewal). The charge is matched, so the case is no longer 🔴 Red; apply `04_refunds.md` under the normal autonomy levels. |
 | SEN-23 | Match found on an account the person cannot verify: do not disclose it. Advise contacting the bank, flag and escalate with reason `fraud_security`. |
 | SEN-24 | No match: say no matching Leaply charge was found, advise contacting the bank, call `flag_security`, escalate with reason `fraud_security`. |
 

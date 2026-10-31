@@ -14,14 +14,35 @@
 | Write | `change_plan(customer_id, plan_id)` | `web`, BIL-30 confirmed, customer confirmed | Option not confirmed by `get_policy` |
 | Write | `pause_subscription(customer_id, period)` | `web`, BIL-30 confirmed, customer confirmed | Option not confirmed by `get_policy` |
 | Write | `process_refund(payment_id, amount, rule_id)` | Rule from `04_refunds.md` matched, within REF-10, confirmed | Store source, outside policy, above limit |
+| Write | `request_data_deletion(customer_id)` | SEN-34 | Unsubscribe or cancellation only |
 | Support | `resend_verification_email(customer_id)` | ACC-02 | Already resent once in this conversation |
 | Support | `create_bug_ticket(customer_id, details)` | ACC-22, ACC-32 | Before basic troubleshooting |
-| Support | `add_internal_note(customer_id, tag, text)` | SEN-05, ACC-43, notable context | Content meant for the customer |
-| Support | `request_data_deletion(customer_id)` | SEN-34 | Unsubscribe or cancellation only |
-| Knowledge | `get_policy(topic)` | Regional rules, pause, plan change, goodwill, response time | Answer is covered by loaded policy |
+| Knowledge | `get_policy(topic)` | A topic listed in TOOL-08 | Answer is covered by loaded policy |
 | Knowledge | `search_help_center(query)` | How-to articles, known issues | Account-specific questions |
-| Safety | `flag_security(customer_id?, reason, evidence)` | SEC-22, SEN-23, SEN-24 | Ordinary frustration or disagreement |
-| Handoff | `escalate_to_human(handoff)` | ESC-10 criteria | Avoiding a resolvable case |
+| Internal | `add_internal_note(customer_id, tag, text)` | SEN-05, ACC-43, notable context | Content meant for the customer |
+| Internal | `flag_security(customer_id?, reason, evidence, priority)` | SEC-22, SEN-23, SEN-24 | Ordinary frustration or disagreement |
+| Internal | `escalate_to_human(handoff)` | ESC-10 criteria | Avoiding a resolvable case |
+
+## Tool Classes
+
+| ID | Rule |
+|---|---|
+| TOOL-07 | Tool classes and their requirements: |
+
+| Class | Tools | Verification (SEC-01) | Confirmation (ESC-01) | Modes |
+|---|---|---|---|---|
+| Identity | `verify_customer`, `find_accounts` | No | No | `customer`, `copilot` |
+| Read | `get_customer`, `get_subscription`, `get_payments`, `get_usage` | Yes in `customer` mode | No | All |
+| Write | `cancel_subscription`, `change_plan`, `pause_subscription`, `process_refund`, `request_data_deletion` | Yes | Yes | `customer` |
+| Support | `resend_verification_email`, `create_bug_ticket` | No, never reveal account data | No | `customer` |
+| Knowledge | `get_policy`, `search_help_center` | No | No | All |
+| Internal | `add_internal_note`, `flag_security`, `escalate_to_human` | No | No | `customer`, `copilot` |
+
+## Policy Topics
+
+| ID | Rule |
+|---|---|
+| TOOL-08 | `get_policy(topic)` accepts only these topics: `plan_change`, `pause`, `goodwill`, `response_time`, `refund_eu_uk`, `refund_<country_code>`. A result applies only to the topic requested and never overrides hard rules (COR-01 to COR-07) or REF-10. |
 
 ## Tool Rules
 
