@@ -1,0 +1,17 @@
+<div class="sidebar-header">
+  <span class="sidebar-title">Conversations</span>
+  <button type="button" class="new-chat" (click)="store.startNew()">New chat</button>
+</div>
+<ul class="conversations">
+  @for (c of store.conversations(); track c.id) {
+    <li>
+      <button type="button" class="conversation" [class.selected]="c.id === store.activeId()" (click)="store.select(c.id)">
+        <span class="conversation-top">
+          <span class="conversation-title">{{ c.title }}</span>
+          <time>{{ c.updatedAt | date: 'MMM d' }}</time>
+        </span>
+        <span class="conversation-preview">{{ c.lastMessage }}</span>
+      </button>
+    </li>
+  }
+</ul>

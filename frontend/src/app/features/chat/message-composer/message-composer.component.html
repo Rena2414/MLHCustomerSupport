@@ -1,0 +1,6 @@
+<form (ngSubmit)="submit()">
+  <input name="draft" [(ngModel)]="draft" placeholder="Write a message" autocomplete="off" />
+  <button type="submit" class="icon-button" aria-label="Send message" [disabled]="!draft.trim()">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 11.3 20.6 3.4c.8-.3 1.5.4 1.2 1.2L13.9 21.5c-.4.9-1.7.8-1.9-.2l-1.6-6.4-6.4-1.6c-1-.2-1.1-1.5-.2-1.9Zm9.2 2.1 1 4 5.2-11.6-6.2 7.6Z"/></svg>
+  </button>
+</form>
