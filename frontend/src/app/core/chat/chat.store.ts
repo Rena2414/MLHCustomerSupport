@@ -29,6 +29,14 @@ export class ChatStore {
     });
   }
 
+  reset(): void {
+    this.conversations.set([]);
+    this.activeId.set(null);
+    this.messages.set([]);
+    this.waitingForReply.set(null);
+    this.sendError.set(null);
+  }
+
   select(id: string): void {
     this.activeId.set(id);
     this.messages.set([]);

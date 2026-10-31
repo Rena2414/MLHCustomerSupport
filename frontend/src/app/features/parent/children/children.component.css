@@ -1,0 +1,31 @@
+:host { display: block; }
+
+.link-form { padding: 1.1rem 1.25rem; margin-bottom: 1.5rem; }
+.link-form h3 { margin: 0 0 0.25rem; }
+.link-form p { margin: 0 0 0.75rem; }
+
+.child-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+.child-card { display: flex; flex-direction: column; padding: 1.1rem 1.25rem; }
+.child-card header { display: flex; align-items: center; gap: 0.75rem; }
+.child-card h3 { margin: 0; color: var(--primary-dark); }
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.subscription { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin: 1rem 0 0.5rem; padding: 0.6rem 0.8rem; border-radius: var(--radius); background: var(--surface-alt); }
+
+h4 { margin: 0.75rem 0 0.35rem; }
+.classes { flex: 1; margin: 0 0 0.75rem; padding: 0; list-style: none; }
+.classes li { padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+
+.unlink { align-self: flex-start; }
+.classes li strong { margin-right: 0.4rem; }

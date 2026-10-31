@@ -12,7 +12,8 @@ public class ConversationConfiguration : IEntityTypeConfiguration<Conversation>
         builder.HasKey(c => c.Id);
         builder.Property(c => c.Id).ValueGeneratedNever();
         builder.Property(c => c.Title).HasMaxLength(200).IsRequired();
-        builder.HasIndex(c => c.UpdatedAt);
+        builder.HasIndex(c => new { c.UserId, c.UpdatedAt });
+        builder.HasOne<User>().WithMany().HasForeignKey(c => c.UserId).OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(c => c.Messages).WithOne().HasForeignKey(m => m.ConversationId).OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -1,0 +1,105 @@
+<a class="back" routerLink="/admin/users">&larr; Back to users</a>
+@if (state().user; as u) {
+  <div class="head">
+    <span class="avatar" aria-hidden="true">{{ u.name.charAt(0).toUpperCase() }}</span>
+    <h2>{{ u.name }}</h2>
+    <span [class]="'badge role-' + u.role.toLowerCase()">{{ u.role }}</span>
+  </div>
+
+  <section class="card">
+    <dl>
+      <dt>Login</dt><dd>{{ u.login }}</dd>
+      <dt>Age</dt><dd>{{ u.age }}</dd>
+      <dt>Subscription</dt>
+      <dd>
+        <span class="badge" [class.subscribed]="u.subscriptionType === 1" [class.none]="u.subscriptionType !== 1">
+          {{ u.subscriptionType | subscription }}
+        </span>
+      </dd>
+      <dt>Joined</dt><dd>{{ u.createdAt | date: 'medium' }}</dd>
+      <dt>Id</dt><dd class="mono">{{ u.id }}</dd>
+    </dl>
+  </section>
+
+  <div class="grid-2">
+    @if (u.role === 'Parent' || u.children.length) {
+      <section class="card panel">
+        <h3>Children</h3>
+        @for (child of u.children; track child.id) {
+          <a class="person" [routerLink]="['/admin/users', child.id]">{{ child.name }} <small>{{ child.login }}, {{ child.age }}</small></a>
+        } @empty {
+          <p class="muted">No linked children.</p>
+        }
+      </section>
+    }
+    @if (u.role === 'Student' || u.parents.length) {
+      <section class="card panel">
+        <h3>Parents</h3>
+        @for (parent of u.parents; track parent.id) {
+          <a class="person" [routerLink]="['/admin/users', parent.id]">{{ parent.name }} <small>{{ parent.login }}</small></a>
+        } @empty {
+          <p class="muted">No linked parents.</p>
+        }
+      </section>
+    }
+    @if (u.role === 'Student' || u.role === 'Teacher') {
+      <section class="card panel">
+        <h3>Classes</h3>
+        @for (schoolClass of u.classes; track schoolClass.id) {
+          <div class="person">
+            {{ schoolClass.name }} <small>{{ schoolClass.subject }}@if (u.role === 'Student') {, {{ schoolClass.teacherName }}} @else {, {{ schoolClass.students.length }} students}</small>
+          </div>
+        } @empty {
+          <p class="muted">No classes.</p>
+        }
+      </section>
+    }
+  </div>
+
+  @if (u.concerns.length) {
+    <h3 class="section-title">Concerns</h3>
+    <div class="card scroll">
+      <table class="data-table">
+        <thead>
+          <tr><th>Date</th><th>Student</th><th>Teacher</th><th>Category</th><th>Severity</th><th>Summary</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          @for (concern of u.concerns; track concern.id) {
+            <tr>
+              <td>{{ concern.createdAt | date: 'mediumDate' }}</td>
+              <td>{{ concern.studentName }}</td>
+              <td>{{ concern.teacherName }}</td>
+              <td>{{ concern.category | humanize }}</td>
+              <td><span [class]="'badge severity-' + concern.severity.toLowerCase()">{{ concern.severity }}</span></td>
+              <td>{{ concern.summary }}</td>
+              <td><span class="badge" [class.new]="concern.status === 'New'" [class.none]="concern.status !== 'New'">{{ concern.status }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <h3 class="section-title">Audit log</h3>
+  <div class="card scroll">
+    <table class="data-table">
+      <thead>
+        <tr><th>When</th><th>By</th><th>Action</th><th>Details</th></tr>
+      </thead>
+      <tbody>
+        @for (entry of u.audit; track entry.id) {
+          <tr>
+            <td>{{ entry.createdAt | date: 'medium' }}</td>
+            <td>{{ entry.actor }}</td>
+            <td>{{ entry.action | humanize }}</td>
+            <td>{{ entry.details }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="4" class="empty">No audit entries.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else {
+  <p class="muted">{{ state().loading ? 'Loading user...' : 'User not found.' }}</p>
+}

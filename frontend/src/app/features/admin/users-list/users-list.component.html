@@ -1,0 +1,43 @@
+<div class="page-head">
+  <h2>Users</h2>
+  <div class="segmented" role="group" aria-label="Filter by role">
+    @for (option of roles; track option) {
+      <button type="button" [class.selected]="role() === option" (click)="role.set(option)">
+        {{ option ?? 'All' }}
+      </button>
+    }
+  </div>
+</div>
+<div class="card">
+  <table class="data-table">
+    <thead>
+      <tr><th>Name</th><th>Login</th><th>Role</th><th>Age</th><th>Subscription</th><th>Joined</th></tr>
+    </thead>
+    <tbody>
+      @for (user of state().users; track user.id) {
+        <tr>
+          <td><a [routerLink]="['/admin/users', user.id]">{{ user.name }}</a></td>
+          <td>{{ user.login }}</td>
+          <td><span [class]="'badge role-' + user.role.toLowerCase()">{{ user.role }}</span></td>
+          <td>{{ user.age }}</td>
+          <td>
+            @if (user.role === 'Student') {
+              <span class="badge" [class.subscribed]="user.subscriptionType === 1" [class.none]="user.subscriptionType !== 1">
+                {{ user.subscriptionType | subscription }}
+              </span>
+            } @else {
+              <span class="muted">-</span>
+            }
+          </td>
+          <td>{{ user.createdAt | date: 'mediumDate' }}</td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="empty">
+            @if (state().loading) { Loading users... } @else if (state().error) { Could not load users. } @else { No users found. }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

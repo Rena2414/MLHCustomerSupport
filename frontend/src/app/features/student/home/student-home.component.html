@@ -1,0 +1,65 @@
+@if (user(); as me) {
+  <section class="hero card">
+    <div>
+      <h2>Hi, {{ me.name }}!</h2>
+      <p>Here are your classes and teachers. Questions? Our helper is ready.</p>
+    </div>
+    <a class="button accent" routerLink="/student/chat">Open help chat</a>
+  </section>
+
+  <div class="layout">
+    <section class="card panel classes">
+      <h3>My classes</h3>
+      @if (loading()) {
+        <p class="muted">Loading classes...</p>
+      } @else {
+        <ul class="class-list">
+          @for (schoolClass of classes(); track schoolClass.id) {
+            <li>
+              <span class="subject-dot" aria-hidden="true">{{ schoolClass.subject.charAt(0).toUpperCase() }}</span>
+              <span class="class-text">
+                <strong>{{ schoolClass.name }}</strong>
+                <small>{{ schoolClass.subject }} with {{ schoolClass.teacherName }}</small>
+              </span>
+            </li>
+          } @empty {
+            <li class="muted">You are not in any class yet. Ask your teacher to add you with your login <strong>{{ me.login }}</strong>.</li>
+          }
+        </ul>
+      }
+    </section>
+
+    <div class="side">
+      <section class="card panel">
+        <h3>My subscription</h3>
+        <div class="subscription">
+          <span class="badge" [class.subscribed]="me.subscriptionType === 1" [class.none]="me.subscriptionType !== 1">
+            {{ me.subscriptionType | subscription }}
+          </span>
+          @if (me.subscriptionType !== 1) {
+            <button type="button" class="small" (click)="subscribe()" [disabled]="subscribing()">
+              {{ subscribing() ? 'Subscribing...' : 'Subscribe' }}
+            </button>
+          }
+        </div>
+        @if (subscribeError()) {
+          <p class="form-error" role="alert">{{ subscribeError() }}</p>
+        }
+        @if (me.subscriptionType === 1) {
+          <p class="muted hint">Want to cancel? Ask in the help chat.</p>
+        }
+      </section>
+
+      <section class="card panel">
+        <h3>My teachers</h3>
+        <ul class="teacher-list">
+          @for (teacher of teachers(); track teacher.id) {
+            <li><strong>{{ teacher.name }}</strong> <small class="muted">{{ teacher.subjects.join(', ') }}</small></li>
+          } @empty {
+            <li class="muted">No teachers yet.</li>
+          }
+        </ul>
+      </section>
+    </div>
+  </div>
+}

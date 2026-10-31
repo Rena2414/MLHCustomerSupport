@@ -6,8 +6,8 @@ namespace MlhSupport.Infrastructure.Persistence;
 
 public class EfConversationRepository(AppDbContext db) : IConversationRepository
 {
-    public async Task<IReadOnlyList<Conversation>> GetAllAsync(CancellationToken ct) =>
-        await db.Conversations.AsNoTracking().Include(c => c.Messages).ToListAsync(ct);
+    public async Task<IReadOnlyList<Conversation>> GetByUserAsync(Guid userId, CancellationToken ct) =>
+        await db.Conversations.AsNoTracking().Include(c => c.Messages).Where(c => c.UserId == userId).ToListAsync(ct);
 
     public Task<Conversation?> GetByIdAsync(Guid id, CancellationToken ct) =>
         db.Conversations.Include(c => c.Messages).FirstOrDefaultAsync(c => c.Id == id, ct);

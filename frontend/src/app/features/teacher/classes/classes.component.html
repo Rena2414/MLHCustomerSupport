@@ -1,0 +1,70 @@
+<div class="page-head">
+  <h2>My classes</h2>
+</div>
+
+<form class="card create-form" [formGroup]="createForm" (ngSubmit)="createClass()">
+  <h3>New class</h3>
+  <div class="inline-fields">
+    <label class="field">
+      <span>Class name</span>
+      <input formControlName="name" placeholder="5A Morning group" />
+    </label>
+    <label class="field">
+      <span>Subject</span>
+      <input formControlName="subject" placeholder="Math" />
+    </label>
+    <button type="submit" [disabled]="creating()">{{ creating() ? 'Creating...' : 'Create class' }}</button>
+  </div>
+  @if (createError()) {
+    <p class="form-error" role="alert">{{ createError() }}</p>
+  }
+</form>
+
+@if (loading()) {
+  <p class="muted">Loading classes...</p>
+} @else {
+  <div class="class-grid">
+    @for (schoolClass of classes(); track schoolClass.id) {
+      <section class="card class-card">
+        <header>
+          <h3>{{ schoolClass.name }}</h3>
+          <span class="badge subject">{{ schoolClass.subject }}</span>
+        </header>
+        <p class="muted count">{{ schoolClass.students.length }} {{ schoolClass.students.length === 1 ? 'student' : 'students' }}</p>
+        <ul class="students">
+          @for (student of schoolClass.students; track student.id) {
+            <li>
+              <span><strong>{{ student.name }}</strong> <small>{{ student.login }}, {{ student.age }}</small></span>
+              <button
+                type="button"
+                class="button ghost small"
+                (click)="removeStudent(schoolClass, student)"
+                [disabled]="busyClassIds().has(schoolClass.id)"
+                [attr.aria-label]="'Remove ' + student.name"
+              >
+                Remove
+              </button>
+            </li>
+          } @empty {
+            <li class="muted">No students yet.</li>
+          }
+        </ul>
+        <form class="add-student" (ngSubmit)="addStudent(schoolClass)">
+          <input
+            [ngModel]="studentLogins()[schoolClass.id] ?? ''"
+            (ngModelChange)="setLogin(schoolClass.id, $event)"
+            [name]="'login-' + schoolClass.id"
+            placeholder="Student login"
+            aria-label="Student login"
+          />
+          <button type="submit" class="small" [disabled]="busyClassIds().has(schoolClass.id)">Add</button>
+        </form>
+        @if (classErrors()[schoolClass.id]; as message) {
+          <p class="form-error" role="alert">{{ message }}</p>
+        }
+      </section>
+    } @empty {
+      <p class="muted">You have no classes yet. Create your first one above.</p>
+    }
+  </div>
+}

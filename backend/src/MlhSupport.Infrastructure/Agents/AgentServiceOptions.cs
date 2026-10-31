@@ -6,4 +6,5 @@ public class AgentServiceOptions
 
     public string BaseUrl { get; set; } = "http://localhost:8000";
     public int TimeoutSeconds { get; set; } = 240;
+    public string ApiKey { get; set; } = string.Empty;
 }

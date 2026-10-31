@@ -5,3 +5,5 @@ public record ConversationDto(Guid Id, string Title, string LastMessage, DateTim
 public record ChatMessageDto(Guid Id, string Author, string Text, DateTime CreatedAt);
 
 public record SendMessageRequest(string Text);
+
+public record AgentUserContext(Guid Id, string Name, int Age);

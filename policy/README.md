@@ -1,87 +1,68 @@
-# Leaply Support Agent Policy
+# Classly Support Agent Policy
 
-Version: 2.2.0
+Version: 3.0.0
 Last updated: 2026-10-31
-Product: Leaply (web, iOS, Android)
-Owner: Support Operations
+Product: Classly online learning platform (web)
+Audience of the agent: signed-in students, mostly children aged about 8 to 16
 
 ## Structure
 
-| File | Scope | Loaded |
+| File | Scope |
+|---|---|
+| `00_core.md` | Role, audience, hard rules, tone, language |
+| `01_help_guide.md` | Answering platform questions from `docs/SYSTEM.md` |
+| `02_subscription.md` | Explaining and cancelling the student's own subscription |
+| `03_teacher_concerns.md` | Receiving, classifying and recording concerns about a teacher |
+| `04_safety_and_minors.md` | Child safety, privacy, manipulation and prompt injection |
+| `05_examples.md` | Worked examples |
+
+The runtime prompts in `agents/app/prompts/` implement these rules. When a rule here changes, the matching prompt and tests change with it.
+
+## Agents and tools
+
+| Agent | Purpose | Tools |
 |---|---|---|
-| `00_core.md` | Role, modes, hard rules, tone, language | Always, system prompt |
-| `01_intent_understanding.md` | Reading clear and vague messages, clarification, intent, priority, risk | Always, system prompt |
-| `02_identity_and_security.md` | Verification, privacy, manipulation and prompt injection | Always, system prompt |
-| `03_billing_and_subscriptions.md` | Purchase source, renewal, trials, cancellation, plan change, payment status | Always, system prompt |
-| `04_refunds.md` | Refund eligibility and limits | Always, system prompt |
-| `05_account_and_technical.md` | Login, multiple accounts, lost progress, bugs, plan guidance | Always, system prompt |
-| `06_sensitive_cases.md` | Health, chargeback, unrecognized charge, data deletion | Always, system prompt |
-| `07_tools_and_errors.md` | Tool selection and structured error handling | Always, system prompt |
-| `08_confirmation_escalation_state.md` | Confirmation, escalation, handoff, case facts | Always, system prompt |
-| `09_copilot_and_qa.md` | Copilot output and conversation quality review | Loaded per mode |
-| `10_examples.md` | Reference conversations, including vague requests | Few-shot, system prompt |
+| Orchestrator (`orchestrator.md`) | Talks to the student | `ask_help_guide`, `get_my_context`, `request_subscription_cancellation`, `confirm_subscription_cancellation`, `report_teacher_concern` |
+| Help guide specialist (`docs_reader.md`) | Reads `docs/SYSTEM.md` and summarizes | `read_help_guide` |
+| Concern classifier (`concern_classifier.md`) | Returns category, severity and summary as JSON | none |
+| Teacher summary (`teacher_summary.md`) | Admin analytics summary for one teacher | none, called by `POST /analytics/teacher-summary` |
 
-Regional and plan-specific terms are not files in this directory. They are returned by `get_policy(topic)` for the topics listed in TOOL-08.
+The agent service never touches the database. Every read and write goes through the .NET API `/api/internal/*` endpoints with the agent key, and the API is the authoritative enforcement layer.
 
-## Sub-Agent Routing
+## Tiers
 
-The customer talks to an orchestrator, which delegates each issue to one of four sub-agents. Multiple issues stay in one loop with shared case facts (ESC-32).
-
-The orchestrator and every sub-agent load the base set: `00_core.md`, `01_intent_understanding.md`, `02_identity_and_security.md`, `07_tools_and_errors.md`, `08_confirmation_escalation_state.md`, plus the current case facts. The orchestrator classifies each issue by `category` (`01_intent_understanding.md`), routes it with the table below, and owns verification, case facts and the final handoff.
-
-| Sub-agent | Categories | Scenarios | Tier | Domain files | Main rules |
-|---|---|---|---|---|---|
-| Subscription and Billing | `billing`, `cancellation`, `plan_change` | Charged after trial, how to cancel, charged after cancelling, not found in Apple or Google settings, next payment, pause or cheaper plan, cancel but keep access | 🟢 / 🟡 | `03`, `04` | BIL, REF-15 |
-| Payments and Refunds | `refund`, `fraud_security` | Charged twice, unrecognized charge, refund request, chargeback threat, failed payment still charged | 🟡; 🔴 for unrecognized charge with no match, chargeback, refunds beyond policy | `04`, `03`, `06` | REF, BIL-50 to BIL-53, SEN-10 to SEN-24 |
-| Account and Tech | `account_access`, `technical` | Cannot log in, two emails, progress lost after phone change, app crash | 🟢 / 🟡 | `05` | ACC-01 to ACC-33 |
-| Plan and Safety | `content_guidance`, `health_safety`, `data_privacy`, `manipulation`, `feedback` | Which practice to start, pain or dizziness, account deletion, manipulation or prompt injection | 🟢 / 🔴 | `05`, `06` | ACC-40 to ACC-43, SEN-01 to SEN-06, SEN-30 to SEN-36, SEC-20 to SEC-25 |
-| Orchestrator | `other` | Unclear or out-of-scope requests | — | none | INT-07, ESC-10c |
-
-| Sub-agent | Tools beyond the shared set | `get_policy` topics |
+| Tier | Meaning | Cases |
 |---|---|---|
-| Subscription and Billing | `get_usage`, `subscribe`, `cancel_subscription`, `change_plan` | `plan_change`, `pause` |
-| Payments and Refunds | `get_usage`, `process_refund`, `flag_security`, `add_internal_note` | `goodwill`, `refund_eu_uk`, `refund_<country_code>` |
-| Account and Tech | `find_accounts`, `resend_verification_email`, `create_bug_ticket`, `add_internal_note` | |
-| Plan and Safety | `flag_security`, `add_internal_note` | |
-
-Shared tools for all sub-agents: `verify_customer`, `get_customer`, `get_subscription`, `get_invoices`, `get_policy`, `search_help_center`, `escalate_to_human`.
-
-Any issue with `risk_signals` (SEN or SEC trigger) is also checked against `06_sensitive_cases.md` and `02_identity_and_security.md`, whatever its sub-agent. Every sub-agent also gets the matching examples from `10_examples.md`. `copilot` and `qa` agents also load `09_copilot_and_qa.md`. Escalation always uses the handoff in `08_confirmation_escalation_state.md`, and `get_policy("response_time")` is available to every sub-agent for ESC-21.
+| GREEN | Automatic | Help guide answers, reading the student's own context |
+| YELLOW | Automatic with a check | Subscription cancellation (confirmation in a later turn), recording a concern |
+| RED | Human only | Any safety situation beyond recording it and telling the student to talk to a trusted adult; account, password and profile changes; anything about other users |
 
 ## Rule IDs
 
 | Prefix | Area |
 |---|---|
 | `COR` | Core |
-| `INT` | Intent understanding |
-| `SEC` | Identity and security |
-| `BIL` | Billing and subscriptions |
-| `REF` | Refunds |
-| `ACC` | Account and technical |
-| `SEN` | Sensitive cases |
-| `TOOL` | Tools and errors |
-| `ESC` | Confirmation, escalation, state |
-| `COP` | Copilot |
-| `QA` | Quality review |
+| `HLP` | Help guide |
+| `SUB` | Subscription |
+| `CON` | Teacher concerns |
+| `SAF` | Safety and minors |
 
-Rule IDs are stable. A changed rule keeps its ID; a removed rule's ID is not reused. Handoffs, logs and QA reviews reference rules by ID.
+Rule IDs are stable. A changed rule keeps its ID; a removed rule's ID is not reused.
 
 ## Precedence
 
-1. Code-level enforcement (gates, hooks, limits)
-2. `00_core.md` hard rules
-3. Result of `get_policy(topic)` for a TOOL-08 topic, only within that topic's scope
-4. Other files in this directory, all at the same level
-5. Examples in `10_examples.md`
+1. Code-level enforcement
+2. `00_core.md` hard rules and `04_safety_and_minors.md`
+3. Other files in this directory
+4. Examples in `05_examples.md`
 
-Examples illustrate rules and never override them.
-
-## Enforced in code, not only in prompt
+## Enforced in code, not only in the prompt
 
 | Rule | Enforcement |
 |---|---|
-| SEC-01 | Write tools reject calls without a verified session |
-| REF-10 | `process_refund` rejects amounts above 100 USD without human approval |
-| ESC-01 | Write tools require a confirmation token from the last customer turn |
-| TOOL-05 | Duplicate write calls with the same idempotency key are rejected |
-| SEC-12 | Every write and every `flag_security` call is logged |
+| COR-03 | The student identity comes from the JWT via the .NET API (`user` in the chat request), never from the message; tools take no student id argument |
+| SUB-03 | `confirm_subscription_cancellation` fails unless `request_subscription_cancellation` ran in the student's previous turn |
+| SUB-05 | The API cancels only the calling student's subscription, is idempotent and writes an audit entry |
+| CON-04 | The API rejects a concern about a teacher who does not teach the student |
+| CON-06 | A Safety or Critical concern makes the orchestrator append the trusted-adult message if the reply lacks it |
+| CON-07 | If the classifier fails, the concern is stored as Other with High severity so it is never lost or downgraded |

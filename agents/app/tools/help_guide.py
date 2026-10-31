@@ -8,7 +8,7 @@ def build_read_help_guide_tool(doc_path: Path) -> Tool:
     spec = ToolSpec(
         name="read_help_guide",
         description=(
-            "Returns the full text of the Leaply help guide, a set of questions and answers about the app. "
+            "Returns the full text of the Classly help guide, a set of questions and answers about the learning platform. "
             "Call it once, then answer from it. It takes no arguments."
         ),
         parameters={"type": "object", "properties": {}},
@@ -21,6 +21,6 @@ def build_read_help_guide_tool(doc_path: Path) -> Tool:
             raise ToolError("not_found", "The help guide does not exist")
         except OSError:
             raise ToolError("io_error", "The help guide could not be read", retryable=True)
-        return {"document": "Leaply help guide", "content": content}
+        return {"document": "Classly help guide", "content": content}
 
     return Tool(spec=spec, handler=handler)

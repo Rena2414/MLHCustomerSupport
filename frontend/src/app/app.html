@@ -1,10 +1,24 @@
-<header class="topbar">
-  <span class="brand">Wellness Support</span>
-  <nav>
-    <a routerLink="/clients" routerLinkActive="active">Clients</a>
-    <a routerLink="/chat" routerLinkActive="active">Support chat</a>
-  </nav>
-</header>
-<main>
+@if (user(); as currentUser) {
+  <header class="topbar">
+    <a class="brand" [routerLink]="homeRoute()">
+      <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="var(--primary)"/><path d="M8 17l12-6 12 6-12 6z" fill="var(--accent)"/><path d="M13 20v6c0 2 3.5 4 7 4s7-2 7-4v-6l-7 3.5z" fill="#ffffff"/></svg>
+      {{ productName }}
+    </a>
+    <nav>
+      @for (link of navLinks(); track link.path) {
+        <a [routerLink]="link.path" routerLinkActive="active">{{ link.label }}</a>
+      }
+    </nav>
+    <div class="user-menu">
+      <span class="avatar" aria-hidden="true">{{ currentUser.name.charAt(0).toUpperCase() }}</span>
+      <span class="who">
+        <strong>{{ currentUser.name }}</strong>
+        <small>{{ currentUser.role }}</small>
+      </span>
+      <button type="button" class="button secondary small" (click)="logout()">Log out</button>
+    </div>
+  </header>
+}
+<main [class.guest]="!user()">
   <router-outlet />
 </main>

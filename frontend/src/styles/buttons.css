@@ -28,3 +28,11 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 
 .icon-button svg { width: 20px; height: 20px; fill: currentColor; }
+
+button.small, .button.small { padding: 0.35rem 0.75rem; font-size: 0.9rem; }
+
+.button.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+.button.ghost:hover { background: var(--danger-bg); border-color: transparent; color: var(--danger); }
+
+.button.accent { border-color: var(--accent); background: var(--accent); color: var(--text); }
+.button.accent:hover { border-color: #e0a010; background: #e0a010; }

@@ -3,16 +3,26 @@
 .topbar {
   display: flex;
   align-items: center;
-  gap: 2.5rem;
+  gap: 2rem;
   padding: 0 2rem;
   height: var(--topbar-height);
   border-bottom: 1px solid var(--border);
-  background: #ffffff;
+  background: var(--surface);
 }
 
-.brand { font-size: 1.25rem; font-weight: 700; color: var(--primary-dark); }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--primary-dark);
+  text-decoration: none;
+}
 
-nav { display: flex; gap: 0.5rem; height: 100%; }
+.brand .logo { width: 32px; height: 32px; }
+
+nav { display: flex; gap: 0.25rem; height: 100%; flex: 1; }
 
 nav a {
   display: flex;
@@ -25,6 +35,31 @@ nav a {
 }
 
 nav a:hover { color: var(--primary-dark); }
-nav a.active { color: var(--primary-dark); border-bottom-color: var(--primary); }
+nav a.active { color: var(--primary-dark); border-bottom-color: var(--accent); }
+
+.user-menu { display: flex; align-items: center; gap: 0.75rem; }
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-weight: 800;
+}
+
+.who { display: flex; flex-direction: column; line-height: 1.2; }
+.who small { color: var(--muted); }
 
 main { flex: 1; width: 100%; max-width: 1100px; margin: 0 auto; padding: 2rem; }
+main.guest { max-width: none; background: var(--page-pattern); }
+
+@media (max-width: 760px) {
+  .topbar { flex-wrap: wrap; height: auto; gap: 0.5rem 1rem; padding: 0.75rem 1rem; }
+  nav { order: 3; flex-basis: 100%; height: 44px; overflow-x: auto; }
+  .user-menu { margin-left: auto; }
+  .who { display: none; }
+  main { padding: 1.25rem 1rem; }
+}

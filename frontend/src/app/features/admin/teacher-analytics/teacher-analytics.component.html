@@ -1,0 +1,157 @@
+<div class="page-head">
+  <h2>Teacher analytics</h2>
+</div>
+
+@if (loading()) {
+  <p class="muted">Loading analytics...</p>
+} @else if (loadError()) {
+  <p class="form-error" role="alert">{{ loadError() }}</p>
+} @else {
+  <div class="stats">
+    <div class="card stat"><span class="stat-label">All concerns</span><span class="stat-value">{{ totals().total }}</span></div>
+    <div class="card stat"><span class="stat-label">Open</span><span class="stat-value">{{ totals().open }}</span></div>
+    <div class="card stat"><span class="stat-label">Last 30 days</span><span class="stat-value">{{ totals().lastThirtyDays }}</span></div>
+    <div class="card stat"><span class="stat-label">Teachers</span><span class="stat-value">{{ teachers().length }}</span></div>
+  </div>
+
+  <div class="teacher-grid">
+    @for (teacher of sortedTeachers(); track teacher.teacherId) {
+      <button
+        type="button"
+        class="teacher-card"
+        [class.selected]="selectedId() === teacher.teacherId"
+        [attr.aria-pressed]="selectedId() === teacher.teacherId"
+        (click)="select(teacher.teacherId)"
+      >
+        <span class="teacher-name">{{ teacher.teacherName }}</span>
+        <span class="teacher-counts">
+          <span><strong>{{ teacher.total }}</strong> total</span>
+          <span class="badge" [class.new]="teacher.open > 0" [class.none]="teacher.open === 0">{{ teacher.open }} open</span>
+        </span>
+        <svg class="sparkline" [attr.viewBox]="'0 0 ' + sparkWidth + ' ' + sparkHeight" preserveAspectRatio="none" aria-hidden="true">
+          <polyline [attr.points]="sparklines().get(teacher.teacherId)" />
+        </svg>
+        <span class="spark-caption">30-day trend</span>
+      </button>
+    } @empty {
+      <p class="muted">No teachers yet.</p>
+    }
+  </div>
+
+  @if (detailsLoading()) {
+    <p class="muted">Loading teacher details...</p>
+  }
+
+  @if (details(); as d) {
+    <section class="detail">
+      <div class="detail-head">
+        <h3>{{ d.teacherName }}</h3>
+        <span class="muted">{{ d.total }} concerns, {{ d.open }} open</span>
+      </div>
+
+      <div class="charts">
+        <div class="card chart-card">
+          <h4>By category</h4>
+          @for (row of categoryRows(); track row.label) {
+            <div class="bar-row" [attr.title]="(row.label | humanize) + ': ' + row.count">
+              <span class="bar-label">{{ row.label | humanize }}</span>
+              <span class="bar-track"><span [class]="'bar-fill ' + row.tone" [class.zero]="row.count === 0" [style.width.%]="row.percent"></span></span>
+              <span class="bar-value">{{ row.count }}</span>
+            </div>
+          } @empty {
+            <p class="muted">No data.</p>
+          }
+        </div>
+
+        <div class="card chart-card">
+          <h4>By severity</h4>
+          @for (row of severityRows(); track row.label) {
+            <div class="bar-row" [attr.title]="row.label + ': ' + row.count">
+              <span class="bar-label">{{ row.label }}</span>
+              <span class="bar-track"><span [class]="'bar-fill ' + row.tone" [class.zero]="row.count === 0" [style.width.%]="row.percent"></span></span>
+              <span class="bar-value">{{ row.count }}</span>
+            </div>
+          } @empty {
+            <p class="muted">No data.</p>
+          }
+        </div>
+
+        <div class="card chart-card trend-card">
+          <h4>Concerns per day, last 30 days</h4>
+          <div class="trend" (mouseleave)="hoveredDay.set(null)">
+            <span class="trend-max">{{ trendMax() }}</span>
+            <svg [attr.viewBox]="'0 0 ' + chartWidth + ' ' + chartHeight" preserveAspectRatio="none" role="img" aria-label="Concerns per day over the last 30 days">
+              <line class="baseline" x1="0" [attr.y1]="chartHeight" [attr.x2]="chartWidth" [attr.y2]="chartHeight" />
+              <line class="gridline" x1="0" y1="8" [attr.x2]="chartWidth" y2="8" />
+              @for (bar of trendBars(); track bar.day.key; let i = $index) {
+                <rect class="bar" [class.hovered]="hoveredDay() === i" [attr.x]="bar.x" [attr.y]="bar.y" [attr.width]="bar.width" [attr.height]="bar.height" rx="2" />
+                <rect class="hit" [attr.x]="bar.x - 1" y="0" [attr.width]="bar.width + 2" [attr.height]="chartHeight" (mouseenter)="hoveredDay.set(i)" />
+              }
+            </svg>
+            @if (hoveredBar(); as bar) {
+              <div class="tooltip" [style.left.%]="((bar.x + bar.width / 2) / chartWidth) * 100">
+                <strong>{{ bar.day.count }}</strong> {{ bar.day.count === 1 ? 'concern' : 'concerns' }}
+                <small>{{ bar.day.date | date: 'MMM d' }}</small>
+              </div>
+            }
+          </div>
+          <div class="trend-axis">
+            <span>{{ trendDays()[0].date | date: 'MMM d' }}</span>
+            <span>Today</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card summary-card">
+        <div class="summary-head">
+          <h4>AI summary</h4>
+          <button type="button" (click)="generateSummary()" [disabled]="summaryLoading()">
+            {{ summaryLoading() ? 'Generating...' : summary() ? 'Generate again' : 'Generate AI summary' }}
+          </button>
+        </div>
+        @if (summary(); as s) {
+          <p class="summary-text">{{ s.summary }}</p>
+          @if (s.recommendedActions.length) {
+            <h5>Recommended actions</h5>
+            <ul>
+              @for (action of s.recommendedActions; track $index) {
+                <li>{{ action }}</li>
+              }
+            </ul>
+          }
+        } @else if (summaryError()) {
+          <p class="form-error" role="alert">{{ summaryError() }}</p>
+        } @else {
+          <p class="muted">Get a short overview of this teacher's concerns and suggested next steps.</p>
+        }
+      </div>
+
+      <div class="list-head">
+        <h4>Concerns</h4>
+        <label class="toggle"><input type="checkbox" [checked]="openOnly()" (change)="openOnly.set(!openOnly())" /> Open only</label>
+      </div>
+      <div class="concern-list">
+        @for (concern of visibleConcerns(); track concern.id) {
+          <article class="card concern" [class.reviewed]="concern.status === 'Reviewed'">
+            <header>
+              <span [class]="'badge severity-' + concern.severity.toLowerCase()">{{ concern.severity }}</span>
+              <span class="badge category">{{ concern.category | humanize }}</span>
+              <span class="muted when">{{ concern.createdAt | date: 'mediumDate' }} by {{ concern.studentName }}</span>
+              @if (concern.status === 'Reviewed') {
+                <span class="badge none">Reviewed</span>
+              } @else {
+                <button type="button" class="button secondary small" (click)="markReviewed(concern)" [disabled]="reviewingIds().has(concern.id)">
+                  Mark reviewed
+                </button>
+              }
+            </header>
+            <p class="concern-summary">{{ concern.summary }}</p>
+            <p class="concern-text">"{{ concern.text }}"</p>
+          </article>
+        } @empty {
+          <p class="muted">{{ openOnly() ? 'No open concerns.' : 'No concerns for this teacher.' }}</p>
+        }
+      </div>
+    </section>
+  }
+}

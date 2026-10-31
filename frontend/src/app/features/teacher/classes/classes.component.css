@@ -1,0 +1,18 @@
+:host { display: block; }
+
+.create-form { padding: 1.1rem 1.25rem; margin-bottom: 1.5rem; }
+.create-form h3 { margin: 0 0 0.75rem; }
+
+.class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+.class-card { display: flex; flex-direction: column; padding: 1.1rem 1.25rem; border-top: 4px solid var(--accent); }
+.class-card header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.class-card h3 { margin: 0; color: var(--primary-dark); }
+.count { margin: 0.25rem 0 0.5rem; font-size: 0.9rem; }
+
+.students { flex: 1; margin: 0 0 0.75rem; padding: 0; list-style: none; }
+.students li { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.45rem 0; border-bottom: 1px solid var(--border); }
+.students small { color: var(--muted); }
+
+.add-student { display: flex; gap: 0.5rem; }
+.add-student input { flex: 1; min-width: 0; }
+.students strong { margin-right: 0.4rem; }

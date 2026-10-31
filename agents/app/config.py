@@ -19,7 +19,9 @@ class Settings(BaseSettings):
     inline_system_prompt: bool = False
     system_doc_path: Path = REPO_ROOT / "docs" / "SYSTEM.md"
     max_iterations: int = 25
-    backend_api_url: str = "http://localhost:5162/api"
+    api_base_url: str = "http://localhost:5162"
+    agent_api_key: Optional[SecretStr] = None
+    api_timeout_seconds: float = 10.0
 
     def require_model_access(self) -> None:
         if self.gemini_api_key is None or not self.gemini_api_key.get_secret_value():

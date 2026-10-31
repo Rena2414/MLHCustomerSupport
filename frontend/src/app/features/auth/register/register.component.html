@@ -1,0 +1,48 @@
+<div class="card auth-card">
+  <div class="auth-brand">
+    <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="var(--primary)"/><path d="M8 17l12-6 12 6-12 6z" fill="var(--accent)"/><path d="M13 20v6c0 2 3.5 4 7 4s7-2 7-4v-6l-7 3.5z" fill="#ffffff"/></svg>
+    <span>{{ productName }}</span>
+  </div>
+  <h2>Create an account</h2>
+  <p class="lead">Tell us who you are.</p>
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <div class="role-options" role="radiogroup" aria-label="Role">
+      @for (option of roles; track option.value) {
+        <label [class.selected]="selectedRole() === option.value">
+          <input type="radio" formControlName="role" [value]="option.value" />
+          {{ option.label }}
+          <small>{{ option.hint }}</small>
+        </label>
+      }
+    </div>
+    <div class="row">
+      <label class="field">
+        <span>Name</span>
+        <input formControlName="name" autocomplete="name" />
+      </label>
+      <label class="field">
+        <span>Age</span>
+        <input type="number" formControlName="age" min="5" max="120" />
+      </label>
+    </div>
+    <label class="field">
+      <span>Login</span>
+      <input formControlName="login" autocomplete="username" />
+      @if (form.controls.login.touched && form.controls.login.invalid) {
+        <small class="field-error">At least 3 characters.</small>
+      }
+    </label>
+    <label class="field">
+      <span>Password</span>
+      <input type="password" formControlName="password" autocomplete="new-password" />
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <small class="field-error">At least 4 characters.</small>
+      }
+    </label>
+    @if (error()) {
+      <p class="form-error" role="alert">{{ error() }}</p>
+    }
+    <button type="submit" [disabled]="submitting()">{{ submitting() ? 'Creating...' : 'Create account' }}</button>
+  </form>
+  <p class="switch">Already have an account? <a routerLink="/login">Log in</a></p>
+</div>

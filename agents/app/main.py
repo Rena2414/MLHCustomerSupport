@@ -1,11 +1,13 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.api.analytics import router as analytics_router
 from app.api.chat import router as chat_router
 from app.config import ConfigurationError
 
-app = FastAPI(title="MlhSupport Agents")
+app = FastAPI(title="Classly Agents")
 app.include_router(chat_router)
+app.include_router(analytics_router)
 
 
 @app.exception_handler(ConfigurationError)

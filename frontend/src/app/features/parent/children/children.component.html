@@ -1,0 +1,61 @@
+<div class="page-head">
+  <h2>My children</h2>
+</div>
+
+<form class="card link-form" (ngSubmit)="link()">
+  <h3>Link a child</h3>
+  <p class="muted">Ask your child for their {{ productName }} login and enter it here.</p>
+  <div class="inline-fields">
+    <label class="field">
+      <span>Child login</span>
+      <input [ngModel]="childLogin()" (ngModelChange)="childLogin.set($event)" name="childLogin" />
+    </label>
+    <button type="submit" [disabled]="linking() || !childLogin().trim()">{{ linking() ? 'Linking...' : 'Link child' }}</button>
+  </div>
+  @if (linkError()) {
+    <p class="form-error" role="alert">{{ linkError() }}</p>
+  }
+</form>
+
+@if (loading()) {
+  <p class="muted">Loading children...</p>
+} @else {
+  <div class="child-grid">
+    @for (child of children(); track child.id) {
+      <section class="card child-card">
+        <header>
+          <span class="avatar" aria-hidden="true">{{ child.name.charAt(0).toUpperCase() }}</span>
+          <div>
+            <h3>{{ child.name }}</h3>
+            <small class="muted">{{ child.login }}, {{ child.age }} years</small>
+          </div>
+        </header>
+
+        <div class="subscription">
+          <span class="badge" [class.subscribed]="child.subscriptionType === 1" [class.none]="child.subscriptionType !== 1">
+            {{ child.subscriptionType | subscription }}
+          </span>
+          @if (child.subscriptionType !== 1) {
+            <button type="button" class="small" (click)="subscribe(child)" [disabled]="busyChildIds().has(child.id)">Subscribe</button>
+          }
+        </div>
+
+        <h4>Classes</h4>
+        <ul class="classes">
+          @for (schoolClass of child.classes; track schoolClass.id) {
+            <li><strong>{{ schoolClass.name }}</strong> <span class="muted">{{ schoolClass.subject }}, {{ schoolClass.teacherName }}</span></li>
+          } @empty {
+            <li class="muted">Not in any class yet.</li>
+          }
+        </ul>
+
+        @if (childError()?.id === child.id) {
+          <p class="form-error" role="alert">{{ childError()?.message }}</p>
+        }
+        <button type="button" class="button ghost small unlink" (click)="unlink(child)" [disabled]="busyChildIds().has(child.id)">Unlink</button>
+      </section>
+    } @empty {
+      <p class="muted">No children linked yet.</p>
+    }
+  </div>
+}

@@ -1,318 +1,307 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<leaply_help_guide>
+<classly_help_guide>
 
   <about>
-    <product>Leaply</product>
+    <product>Classly</product>
     <summary>
-      Leaply is a wellness and habit-building app. Every day it gives you a short guided practice,
-      from 3 to 15 minutes, in breathing, movement, self-massage, nutrition, sleep and mindfulness.
+      Classly is an online learning platform. Teachers create classes and add students to them, students see
+      their classes and teachers in one place, and parents can link their children's accounts to follow along.
+      Students also have the Classly helper, a chat assistant that answers questions about the platform.
     </summary>
-    <available_on>The website theleaply.com, iPhone and iPad (App Store), and Android phones (Google Play).</available_on>
+    <available_on>Any modern web browser on a computer, tablet or phone.</available_on>
     <support_contact>support@example.com</support_contact>
   </about>
 
   <topic id="getting-started" title="Getting started">
 
-    <qa id="what-is-leaply">
-      <question>What is Leaply and what is it used for?</question>
+    <qa id="what-is-classly">
+      <question>What is Classly and what is it used for?</question>
       <answer>
-        Leaply helps you build small, healthy daily habits. You do one short guided practice a day,
-        and each one takes only 3 to 15 minutes. The practices cover breathing, gentle movement,
-        self-massage, nutrition, sleep and mindfulness. It is meant for adults (18 and older).
+        Classly is a place to learn online with your teachers. You can see which classes you are in, who teaches
+        each class, and your subscription. If you have a question about using Classly, you can ask the Classly helper
+        in the chat.
       </answer>
     </qa>
 
-    <qa id="programs">
-      <question>Which programs does Leaply have?</question>
+    <qa id="who-uses-classly">
+      <question>Who uses Classly?</question>
       <answer>
-        There are three programs: Lymphatic Reset, Vagus Nerve Reset, and Brain Activation for Kids.
-        The kids program is used by a parent together with the child. Accounts are always for adults.
+        <p>There are four kinds of accounts:</p>
+        <list>
+          <item>Students join classes and learn with their teachers.</item>
+          <item>Teachers create classes and add students to them.</item>
+          <item>Parents link their children's accounts so they can see their classes and subscription.</item>
+          <item>Admins are the Classly school team. They look after the platform and read concerns that students report.</item>
+        </list>
       </answer>
     </qa>
 
-    <qa id="personal-plan">
-      <question>How does my personal plan work? Where do I start?</question>
+    <qa id="create-account">
+      <question>How do I create a Classly account?</question>
       <answer>
-        When you join, Leaply asks you a few questions in a short quiz and builds a personal plan from
-        your answers. If you are not sure where to start, begin with the shortest daily practice in your plan.
-        If the plan does not feel right for you, you can retake the quiz with new answers or choose a different program.
+        <steps>
+          <step>Open Classly and choose Register.</step>
+          <step>Choose who you are: Student, Teacher or Parent.</step>
+          <step>Type your name, your age, a login name and a password.</step>
+          <step>Press Register. You are signed in straight away.</step>
+        </steps>
+        <p>Admin accounts cannot be created by registering. Children should ask a parent to help them create an account.</p>
       </answer>
     </qa>
 
-    <qa id="medical-advice">
-      <question>Is Leaply medical advice? Is it safe for me?</question>
+    <qa id="home-page">
+      <question>What is on my student home page?</question>
       <answer>
-        No. Leaply is for education and general wellbeing and does not replace a doctor. If you have a health
-        condition, are pregnant, take medication, or are unsure whether a practice is right for you, please ask
-        a doctor or another qualified health professional first.
-      </answer>
-    </qa>
-
-    <qa id="feel-unwell">
-      <question>A practice hurts or makes me dizzy. What should I do?</question>
-      <answer>
-        Please stop the practice right away and talk to a doctor or another qualified health professional.
-        I cannot give medical advice. If you have strong symptoms such as chest pain, fainting or trouble breathing,
-        contact your local emergency services now. I will also pass a note to our team so they can follow up with you.
+        Your Home page shows your classes, the teacher of each class, and whether you have a subscription. If you do not
+        have a subscription yet, you will also see a Subscribe button there. The Chat page is where you talk to the Classly helper.
       </answer>
     </qa>
 
   </topic>
 
-  <topic id="subscription-basics" title="Your subscription">
+  <topic id="account-and-login" title="Account and login">
+
+    <qa id="sign-in">
+      <question>How do I sign in?</question>
+      <answer>
+        <steps>
+          <step>Open Classly and choose Sign in.</step>
+          <step>Type the login name and password you chose when you registered.</step>
+          <step>Press Sign in. You will land on your home page.</step>
+        </steps>
+      </answer>
+    </qa>
+
+    <qa id="forgot-password">
+      <question>I forgot my password or cannot sign in. What do I do?</question>
+      <answer>
+        First check that you typed your login name exactly as you chose it, and that Caps Lock is off. The Classly helper
+        cannot see or change passwords. If you still cannot sign in, ask a parent or another trusted adult to write to
+        Classly support at support@example.com for help.
+      </answer>
+    </qa>
+
+    <qa id="sign-out">
+      <question>How do I sign out?</question>
+      <answer>
+        Open the menu with your name at the top of the page and choose Sign out. Always sign out when you use a shared
+        computer, for example at a library.
+      </answer>
+    </qa>
+
+    <qa id="keep-password-safe">
+      <question>Should I share my password?</question>
+      <answer>
+        No. Keep your password secret and never share it with friends, in the chat, or with anyone who says they work for
+        Classly. Nobody from Classly, including the Classly helper, will ever ask you for your password. A parent can help
+        you keep it safe.
+      </answer>
+    </qa>
+
+    <qa id="change-profile">
+      <question>Can I change my name or age on my profile?</question>
+      <answer>
+        Your name and age are set when you register. The help guide does not describe a way to change them yourself. If they
+        are wrong, ask a parent to contact Classly support at support@example.com.
+      </answer>
+    </qa>
+
+  </topic>
+
+  <topic id="classes" title="Classes and teachers">
+
+    <qa id="see-my-classes">
+      <question>Where can I see my classes and teachers?</question>
+      <answer>
+        Open your Home page. It lists every class you are in, with the subject and the teacher's name. You can also ask the
+        Classly helper "What are my classes?" and it will tell you.
+      </answer>
+    </qa>
+
+    <qa id="join-class">
+      <question>How do I join a class?</question>
+      <answer>
+        Students do not join classes by themselves. Your teacher adds you to the class using your login name. Tell your
+        teacher your login name (never your password), and the class will appear on your Home page once you are added.
+      </answer>
+    </qa>
+
+    <qa id="class-missing">
+      <question>A class is missing from my home page. Why?</question>
+      <answer>
+        A class appears only after your teacher has added you to it. Ask your teacher to check that they added the right
+        login name. If you were removed from a class by mistake, your teacher can add you again.
+      </answer>
+    </qa>
+
+    <qa id="teacher-create-class">
+      <question>How does a teacher create a class and add students?</question>
+      <answer>
+        <steps>
+          <step>The teacher signs in and opens Classes.</step>
+          <step>They create a class with a name and a subject.</step>
+          <step>They add students to the class by typing each student's login name.</step>
+        </steps>
+        <p>A teacher can also remove a student from their class.</p>
+      </answer>
+    </qa>
+
+  </topic>
+
+  <topic id="homework" title="Homework and learning">
+
+    <qa id="homework-help">
+      <question>Can the Classly helper do my homework?</question>
+      <answer>
+        No. The Classly helper answers questions about using Classly, but it does not do homework or give answers to
+        tasks. For help with what you are learning, ask your teacher, a parent, or a classmate.
+      </answer>
+    </qa>
+
+    <qa id="homework-questions">
+      <question>I do not understand my homework or a lesson. What should I do?</question>
+      <answer>
+        It is completely fine not to understand something yet. Ask your teacher at the next lesson or in the way your
+        teacher said to contact them. You can also ask a parent to help you. If you feel your teacher's lessons are often
+        hard to follow, you can tell the Classly helper, and it can pass this on to the school team as a concern.
+      </answer>
+    </qa>
+
+  </topic>
+
+  <topic id="parents" title="Parents">
+
+    <qa id="parent-link-child">
+      <question>How does a parent link their child's account?</question>
+      <answer>
+        <steps>
+          <step>The parent registers or signs in with a Parent account.</step>
+          <step>They open Children.</step>
+          <step>They type the child's login name and press Link.</step>
+        </steps>
+        <p>After linking, the parent can see the child's classes and subscription. A parent can also unlink a child.</p>
+      </answer>
+    </qa>
+
+    <qa id="parent-sees-what">
+      <question>What can my parent see about me?</question>
+      <answer>
+        A linked parent can see your classes, your teachers and your subscription. They can also start a subscription for
+        you. Your chats with the Classly helper are not shown on the parent's page.
+      </answer>
+    </qa>
+
+  </topic>
+
+  <topic id="subscription" title="Subscription and cancellation">
+
+    <qa id="what-is-subscription">
+      <question>What is a Classly subscription?</question>
+      <answer>
+        A subscription turns on the paid Classly plan for a student. Your Home page shows whether you have one. The help
+        guide does not list prices; ask a parent or Classly support at support@example.com about the cost.
+      </answer>
+    </qa>
 
     <qa id="how-to-subscribe">
       <question>How do I get a subscription?</question>
       <answer>
-        <p>You can start a subscription in one of three places: on the website theleaply.com, in the iPhone app
-        (billed by Apple), or in the Android app (billed by Google).</p>
-        <steps>
-          <step>Open Leaply on the website or in the app and finish the short quiz about your goals.</step>
-          <step>Look at the plans on offer. The plan, the price and the billing period are shown before you pay.</step>
-          <step>Choose the plan you like and complete the payment.</step>
-        </steps>
-        <p>Good to know: where you subscribe decides where you cancel later, so remember which one you used.
-        Prices differ by country, plan and special offers, so I cannot quote a price from memory. The exact amount
-        is always shown on the payment screen.</p>
+        <p>There are two ways:</p>
+        <list>
+          <item>A student opens Home and presses Subscribe.</item>
+          <item>A linked parent opens Children, chooses the child and presses Subscribe.</item>
+        </list>
+        <p>Students should always ask a parent before subscribing.</p>
       </answer>
     </qa>
-
-    <qa id="renewal">
-      <question>Does my subscription renew by itself?</question>
-      <answer>
-        Yes. Every subscription renews automatically until you cancel it. To avoid the next payment, cancel at least
-        24 hours before the renewal time. Deleting the app or logging out does not cancel anything.
-      </answer>
-    </qa>
-
-    <qa id="free-trial">
-      <question>What happens when my free trial ends?</question>
-      <answer>
-        A free trial turns into a paid subscription when it ends, unless you cancel before that. Deleting the app or
-        logging out does not stop it. If you do not want to be charged, cancel before the trial ends.
-      </answer>
-    </qa>
-
-    <qa id="where-subscribed">
-      <question>How do I find out where I subscribed (website, Apple or Google)?</question>
-      <answer>
-        If you paid on theleaply.com, the subscription is managed by Leaply, and you will not see it in Apple or Google
-        settings. If you paid in the iPhone app, it is under Subscriptions in your Apple settings. If you paid in the
-        Android app, it is under Subscriptions in Google Play. If you cannot find it in Apple or Google settings,
-        it was almost certainly bought on the website. Your bank statement can also help: the payment shows as
-        Fitovia Limited or Waywell Corp.
-      </answer>
-    </qa>
-
-    <qa id="next-payment">
-      <question>When is my next payment and how much will it be?</question>
-      <answer>
-        The renewal date and amount are shown in your subscription details: on the website go to Profile, Settings,
-        Manage Subscription. For subscriptions bought through Apple or Google, they are shown in the store's
-        subscription settings. Remember that it renews automatically unless you cancel at least 24 hours before.
-      </answer>
-    </qa>
-
-    <qa id="change-or-pause">
-      <question>Can I pause my plan or switch to a cheaper one?</question>
-      <answer>
-        Pausing and changing plans are available only for subscriptions bought on the website, and only for some plans
-        and countries. If you bought through Apple or Google, plan changes are made in the store's subscription settings.
-        If you would like to pause or switch, write to support@example.com and the team will tell you what is
-        possible for your plan.
-      </answer>
-    </qa>
-
-  </topic>
-
-  <topic id="cancel" title="Cancelling">
 
     <qa id="how-to-cancel">
       <question>How do I cancel my subscription?</question>
       <answer>
-        <p>It depends on where you subscribed. If you are not sure, see "How do I find out where I subscribed".</p>
-        <p>If you subscribed on the website:</p>
         <steps>
-          <step>Sign in to your Leaply account.</step>
-          <step>Open Profile, then Settings.</step>
-          <step>Choose Manage Subscription.</step>
-          <step>Choose Cancel subscription and confirm.</step>
+          <step>Open the Chat page and tell the Classly helper "I want to cancel my subscription".</step>
+          <step>The helper explains what will happen and asks you to confirm.</step>
+          <step>Answer yes in your next message if you are sure. The helper then cancels it and tells you when it is done.</step>
         </steps>
-        <p>If you subscribed in the iPhone app (Apple):</p>
-        <steps>
-          <step>Open Settings on your iPhone and tap your name at the top.</step>
-          <step>Tap Subscriptions, then Leaply.</step>
-          <step>Tap Cancel Subscription.</step>
-        </steps>
-        <p>If you subscribed in the Android app (Google Play):</p>
-        <steps>
-          <step>Open the Play Store and tap your profile picture.</step>
-          <step>Tap Payments and subscriptions, then Subscriptions.</step>
-          <step>Choose Leaply and tap Cancel subscription.</step>
-        </steps>
+        <p>It is a good idea to talk to a parent first, because parents often pay for Classly. The helper can only cancel
+        the subscription of the student who is signed in.</p>
       </answer>
     </qa>
 
-    <qa id="keep-access">
-      <question>If I cancel, do I lose access right away?</question>
+    <qa id="after-cancel">
+      <question>What happens after I cancel my subscription?</question>
       <answer>
-        No. Cancelling switches off automatic renewal, and you keep full access until the end of the period you
-        already paid for. Your subscription details show the exact end date.
+        The paid plan is switched off right away. You keep your account, your classes and your teachers. You can subscribe
+        again at any time from your Home page, or a parent can do it for you.
       </answer>
     </qa>
 
-    <qa id="cancel-too-late">
-      <question>I cancelled, but I was charged again. Why?</question>
+    <qa id="cancel-by-mistake">
+      <question>I cancelled by mistake. Can I get my subscription back?</question>
       <answer>
-        There are usually two reasons. The first is cancelling in the wrong place: a subscription bought on the website
-        must be cancelled on the website, and one bought through Apple or Google must be cancelled there. The second
-        is cancelling less than 24 hours before the renewal, which can be too late to stop that payment.
-        If you cancelled correctly more than 24 hours before the charge, you are entitled to a full refund,
-        so please write to support@example.com with the date you cancelled.
+        Yes. Open Home and press Subscribe again, or ask a linked parent to subscribe for you from their Children page.
       </answer>
     </qa>
 
   </topic>
 
-  <topic id="payments" title="Payments and refunds">
+  <topic id="concerns" title="Reporting a concern about a teacher">
 
-    <qa id="charged-after-trial">
-      <question>I was charged after my free trial and did not know it would renew. What can I do?</question>
+    <qa id="report-concern">
+      <question>How do I tell someone about a problem with my teacher?</question>
       <answer>
-        I am sorry for the surprise. A trial becomes a paid subscription when it ends unless it is cancelled first.
-        If you bought on the website and it is within 30 days of that first charge, you can ask for a full refund
-        under the 30-day money-back guarantee. To stop further payments, cancel the subscription, as described
-        in "How do I cancel my subscription".
-      </answer>
-    </qa>
-
-    <qa id="refund">
-      <question>Can I get a refund?</question>
-      <answer>
-        <p>For subscriptions bought on the website, a full refund is possible if:</p>
-        <list>
-          <item>you were charged twice for the same period (the extra charge is refunded at any time);</item>
-          <item>you were charged after you had cancelled at least 24 hours before the charge;</item>
-          <item>the amount was wrong or the wrong plan was charged (the difference is refunded);</item>
-          <item>you ask within 30 days of your first purchase, and this includes the first charge after a free trial.</item>
-        </list>
-        <p>Customers in the EU and UK have 14 days to withdraw from a purchase, and some other countries have similar rights.
-        Using the app very little does not by itself qualify for a refund.</p>
-        <p>Subscriptions bought through Apple or Google are refunded by the store, not by Leaply. For Apple, go to
-        reportaproblem.apple.com, sign in and choose Request a refund. For Google, open your order history on
-        play.google.com and choose Report a problem.</p>
-        <p>Refunds go back to the original payment method and can take up to 15 business days, and your bank may need
-        a few more days to show them. Refund requests are handled by our support team at support@example.com.</p>
-      </answer>
-    </qa>
-
-    <qa id="charged-twice">
-      <question>I was charged twice this month. What happened?</question>
-      <answer>
-        Sometimes it is a real duplicate, and sometimes two different products or two accounts were charged.
-        If you were charged twice for the same plan and the same period, the extra charge is refunded in full.
-        Please send support@example.com the dates and amounts of both charges.
-      </answer>
-    </qa>
-
-    <qa id="unknown-charge">
-      <question>I do not recognize a charge on my bank statement.</question>
-      <answer>
-        Leaply payments appear on statements as Fitovia Limited or Waywell Corp. Check whether the date and amount match
-        a renewal or the end of a free trial. If nothing matches, contact your bank, and also write to
-        support@example.com with the date, the amount and the last 4 digits of your card so our team can look into it.
-      </answer>
-    </qa>
-
-    <qa id="declined-payment">
-      <question>My payment failed or my card was declined, but I still see a charge.</question>
-      <answer>
-        A declined payment can show up as a pending hold. Your bank usually releases it by itself within 3 to 7
-        business days. You do not need to pay again. If the charge is still there after that, write to
-        support@example.com.
-      </answer>
-    </qa>
-
-  </topic>
-
-  <topic id="account" title="Your account and the app">
-
-    <qa id="cannot-log-in">
-      <question>I cannot log in or I did not get the verification email.</question>
-      <answer>
-        First check how you signed up: with email, with Apple, or with Google. For email, look in your spam and
-        promotions folders and wait up to 10 minutes. If you used Sign in with Apple and chose Hide My Email, the
-        account email ends with privaterelay.appleid.com, and you should sign in with the same Apple ID. If the email
-        still does not arrive, write to support@example.com.
-      </answer>
-    </qa>
-
-    <qa id="two-emails">
-      <question>I signed up with two emails. Which one has my subscription?</question>
-      <answer>
-        Try signing in with each email and look at Manage Subscription in Settings. The account with the active
-        subscription shows the plan and the renewal date. For your privacy, our team will check this with you after
-        confirming that the accounts are yours, so write to support@example.com if you cannot tell. Merging two accounts
-        is not something you can do yourself.
-      </answer>
-    </qa>
-
-    <qa id="lost-progress">
-      <question>My progress disappeared after I changed phones.</question>
-      <answer>
-        This usually means you are signed in differently on the new phone, for example with Google instead of email,
-        or you created a new account by accident. Sign out and sign in again with the same method and email you used
-        before. If your progress is still missing, write to support@example.com with your old and new phone models
-        so the technical team can look into it.
-      </answer>
-    </qa>
-
-    <qa id="app-problems">
-      <question>The app crashes or the videos do not play.</question>
-      <answer>
-        <p>Please try these steps in order:</p>
         <steps>
-          <step>Update Leaply to the latest version.</step>
-          <step>Restart your phone.</step>
-          <step>Switch between Wi-Fi and mobile data.</step>
-          <step>If it still fails, uninstall and install the app again.</step>
+          <step>Open the Chat page and tell the Classly helper what happened, in your own words.</step>
+          <step>If you have more than one teacher, the helper asks which teacher you mean.</step>
+          <step>The helper passes your concern to the Classly school team and tells you when it is sent.</step>
         </steps>
-        <p>If the problem remains, write to support@example.com and tell us your phone model, your Android or iOS
-        version, the app version and what happens. A screenshot helps a lot.</p>
+        <p>You can report things like a teacher being unfair, often late or absent, hard to understand, shouting, or
+        anything that made you feel bad or unsafe.</p>
       </answer>
     </qa>
 
-    <qa id="delete-account">
-      <question>How do I delete my account and all my data?</question>
+    <qa id="who-reads-concerns">
+      <question>Who reads my concern? Will my teacher find out?</question>
       <answer>
-        Deleting is permanent: your progress is lost, and only the payment records that the law requires us to keep
-        are retained. Account deletion is done by our support team, so write to support@example.com from the email
-        of your account. The deletion is completed within 30 days. Deleting your account does not cancel a subscription
-        bought through Apple or Google, so cancel that in the store as well.
+        Concerns go to the Classly admins, the school team that looks after the platform. Teachers cannot see the concerns
+        students report. The admins decide what to do, for example talking with the teacher or with your parents.
+      </answer>
+    </qa>
+
+    <qa id="unsafe-teacher">
+      <question>A teacher made me feel unsafe. What should I do?</question>
+      <answer>
+        You did the right thing by wanting to tell someone. Please talk to a parent or another adult you trust today, such
+        as a family member or a school counselor. You can also tell the Classly helper, which passes it to the school team
+        straight away. If you are in danger right now, tell an adult near you or call your local emergency number.
       </answer>
     </qa>
 
   </topic>
 
-  <topic id="help" title="Getting help">
-
-    <qa id="talk-to-human">
-      <question>Can I talk to a person?</question>
-      <answer>
-        Yes. Write to support@example.com and the support team will help you. Please include the email of your
-        account and a short description, so you do not have to explain it twice.
-      </answer>
-    </qa>
+  <topic id="helper" title="The Classly helper">
 
     <qa id="what-helper-can-do">
-      <question>What can this assistant do for me?</question>
+      <question>What can the Classly helper do for me?</question>
       <answer>
-        I can explain what Leaply is, guide you through the app step by step, and help you find where to subscribe,
-        cancel, or get help. For changes to your account, payments or refunds, our support team at
-        support@example.com does the work for you.
+        <list>
+          <item>Answer questions about how Classly works.</item>
+          <item>Tell you your classes, teachers and subscription.</item>
+          <item>Cancel your own subscription after you confirm.</item>
+          <item>Pass a concern about one of your teachers to the school team.</item>
+        </list>
+        <p>It cannot see other students' information, change passwords, or do homework.</p>
+      </answer>
+    </qa>
+
+    <qa id="helper-private-info">
+      <question>What should I not tell the Classly helper?</question>
+      <answer>
+        Never share your password, home address, phone number or photos in the chat. The helper never needs them. If you
+        need to describe a problem, your own words about what happened are enough.
       </answer>
     </qa>
 
   </topic>
 
-</leaply_help_guide>
+</classly_help_guide>

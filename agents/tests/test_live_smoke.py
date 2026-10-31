@@ -20,5 +20,5 @@ def test_orchestrator_answers_from_system_doc():
     orchestrator = OrchestratorAgent(
         model, InMemoryConversationStore(), DocsReaderAgent(model, settings.system_doc_path)
     )
-    reply = orchestrator.handle("smoke", "How do I cancel my subscription if I bought it on the website?")
-    assert "Manage Subscription" in reply
+    reply = orchestrator.handle("smoke", "How do I join a class?")
+    assert "login" in reply.lower()
