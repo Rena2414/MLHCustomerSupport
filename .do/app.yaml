@@ -1,0 +1,65 @@
+name: mlh-support
+region: fra
+
+databases:
+  - name: db
+    engine: PG
+    production: false
+
+services:
+  - name: backend
+    source_dir: backend
+    dockerfile_path: backend/Dockerfile
+    github:
+      repo: Rena2414/MLHCustomerSupport
+      branch: main
+      deploy_on_push: true
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    http_port: 8080
+    health_check:
+      http_path: /health
+    routes:
+      - path: /api
+        preserve_path_prefix: true
+    envs:
+      - key: ConnectionStrings__Default
+        scope: RUN_TIME
+        value: Host=${db.HOSTNAME};Port=${db.PORT};Username=${db.USERNAME};Password=${db.PASSWORD};Database=${db.DATABASE};SSL Mode=Require;Trust Server Certificate=true
+
+  - name: agents
+    source_dir: agents
+    environment_slug: python
+    github:
+      repo: Rena2414/MLHCustomerSupport
+      branch: main
+      deploy_on_push: true
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    internal_ports:
+      - 8080
+    run_command: uvicorn app.main:app --host 0.0.0.0 --port 8080
+    health_check:
+      http_path: /health
+      port: 8080
+    envs:
+      - key: BACKEND_API_URL
+        scope: RUN_TIME
+        value: http://backend:8080/api
+      - key: GEMINI_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+
+static_sites:
+  - name: frontend
+    source_dir: frontend
+    environment_slug: node-js
+    github:
+      repo: Rena2414/MLHCustomerSupport
+      branch: main
+      deploy_on_push: true
+    build_command: npm ci && npm run build
+    output_dir: dist/frontend/browser
+    catchall_document: index.html
+    routes:
+      - path: /
